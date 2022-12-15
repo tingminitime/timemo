@@ -1,8 +1,8 @@
 {
   "index_name": "timemo",
-  "start_urls": [""],
+  "start_urls": ["https://timemo.vercel.app/"],
   "sitemap_urls": [
-    ""
+    "https://timemo.vercel.app/sitemap.xml"
   ],
   "sitemap_alternate_links": true,
   "stop_urls": ["/tests"],

@@ -12,7 +12,7 @@ const projectName = 'timemo'
 const config = {
   title: 'TIMemo',
   tagline: 'The only constant in the world is change.',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://timemo.vercel.app',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -61,7 +61,7 @@ const config = {
       navbar: {
         title: 'TIMemo',
         logo: {
-          alt: 'My Site Logo',
+          alt: 'TIMemo Logo',
           src: 'img/logo.svg',
         },
         items: [
