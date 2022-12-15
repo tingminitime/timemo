@@ -3,6 +3,10 @@
 
 const lightCodeTheme = require('prism-react-renderer/themes/github')
 const darkCodeTheme = require('prism-react-renderer/themes/dracula')
+require('dotenv').config()
+
+const organizationName = 'tingminitime'
+const projectName = 'timemo'
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -36,13 +40,13 @@ const config = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/tingminitime/timemo/tree/main/',
+          editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/tingminitime/timemo/tree/main/',
+          editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -65,7 +69,7 @@ const config = {
             type: 'doc',
             docId: 'intro',
             position: 'left',
-            label: 'Tutorial',
+            label: '筆記',
           },
           { to: '/blog', label: 'Blog', position: 'left' },
           {
@@ -74,6 +78,11 @@ const config = {
             position: 'right',
           },
         ],
+      },
+      algolia: {
+        appId: process.env.APP_ID,
+        apiKey: process.env.API_KEY,
+        indexName: 'timemo',
       },
       docs: {
         sidebar: {
@@ -103,9 +112,14 @@ const config = {
                 label: 'GitHub',
                 href: 'https://github.com/tingminitime',
               },
+            ],
+          },
+          {
+            title: 'Support',
+            items: [
               {
                 label: '隱私權政策',
-                to: '/privacy-policy',
+                to: '/support/privacy-policy',
               },
             ],
           },
