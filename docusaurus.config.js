@@ -10,7 +10,7 @@ const projectName = 'timemo'
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Timemo',
+  title: 'TIMemo',
   tagline: 'The only constant in the world is change.',
   url: 'https://your-docusaurus-test-site.com',
   baseUrl: '/',
@@ -59,7 +59,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Timemo',
+        title: 'TIMemo',
         logo: {
           alt: 'My Site Logo',
           src: 'img/logo.svg',
@@ -69,7 +69,7 @@ const config = {
             type: 'doc',
             docId: 'intro',
             position: 'left',
-            label: '筆記',
+            label: '前端筆記',
           },
           { to: '/blog', label: 'Blog', position: 'left' },
           {
