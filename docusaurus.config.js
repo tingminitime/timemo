@@ -80,8 +80,8 @@ const config = {
         ],
       },
       algolia: {
-        appId: process.env.APP_ID,
-        apiKey: process.env.API_KEY,
+        appId: process.env.ALGOLIA_APP_ID,
+        apiKey: process.env.ALGOLIA_API_KEY,
         indexName: 'timemo',
       },
       docs: {
