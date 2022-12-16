@@ -31,6 +31,12 @@ const config = {
     locales: ['zh-Hant', 'en'],
   },
 
+  stylesheets: [
+    'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200',
+  ],
+
+  plugins: ['docusaurus-plugin-sass'],
+
   presets: [
     [
       'classic',
@@ -49,7 +55,7 @@ const config = {
           editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve('./src/scss/custom.scss'),
         },
       }),
     ],
@@ -58,11 +64,17 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      colorMode: {
+        respectPrefersColorScheme: true,
+      },
       navbar: {
         title: 'TIMemo',
+        hideOnScroll: true,
         logo: {
           alt: 'TIMemo Logo',
-          src: 'img/logo.svg',
+          src: 'img/Tim-logo.svg',
+          srcDark: 'img/Tim-logo-white.svg',
+          style: { marginRight: '1rem' },
         },
         items: [
           {
@@ -71,11 +83,30 @@ const config = {
             position: 'left',
             label: '前端筆記',
           },
-          { to: '/blog', label: 'Blog', position: 'left' },
+          {
+            to: '/blog',
+            label: 'Blog',
+            position: 'left',
+          },
           {
             href: 'https://github.com/tingminitime',
             label: 'GitHub',
             position: 'right',
+          },
+          {
+            type: 'dropdown',
+            label: '更多',
+            position: 'left',
+            items: [
+              {
+                to: '/more/about',
+                label: '關於我',
+              },
+              {
+                to: '/support/privacy-policy',
+                label: '隱私權政策',
+              },
+            ],
           },
         ],
       },
@@ -93,11 +124,15 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: 'Local',
             items: [
               {
-                label: 'Tutorial',
+                label: '前端筆記',
                 to: '/docs/intro',
+              },
+              {
+                label: 'Blog',
+                to: '/blog',
               },
             ],
           },
@@ -105,12 +140,16 @@ const config = {
             title: 'More',
             items: [
               {
-                label: 'Blog',
-                to: '/blog',
-              },
-              {
                 label: 'GitHub',
                 href: 'https://github.com/tingminitime',
+              },
+              {
+                label: 'CakeResume',
+                href: 'https://www.cakeresume.com/e0610k',
+              },
+              {
+                label: 'My resume',
+                href: 'https://tingminitime.github.io/my-resume/',
               },
             ],
           },

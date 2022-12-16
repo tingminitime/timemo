@@ -1,0 +1,25 @@
+/* --- navbar --- */
+.dropdown > .navbar__link {
+  position: relative;
+}
+
+.dropdown > .navbar__link:after {
+  content: '';
+  position: absolute;
+  border: none;
+  background: url('@site/static/svg/icon-expand_more-dark.svg') no-repeat center /
+    contain;
+  right: 0;
+  top: 50%;
+  height: 20px;
+  width: 20px;
+  margin: 0;
+  transform: translate(100%, -50%);
+}
+
+[data-theme='dark'] {
+  .dropdown > .navbar__link:after {
+    background: url('@site/static/svg/icon-expand_more-light.svg') no-repeat
+      center / contain;
+  }
+}

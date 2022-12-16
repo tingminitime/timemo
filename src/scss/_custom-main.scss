@@ -1,0 +1,7 @@
+@use './variable';
+
+[data-theme='light'] {
+  main {
+    background-color: variable.$primary-white;
+  }
+}
