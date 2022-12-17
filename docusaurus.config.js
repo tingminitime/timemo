@@ -69,12 +69,12 @@ const config = {
       },
       navbar: {
         title: 'TIMemo',
-        hideOnScroll: true,
+        hideOnScroll: false,
         logo: {
           alt: 'TIMemo Logo',
           src: 'img/Tim-logo.svg',
           srcDark: 'img/Tim-logo-white.svg',
-          style: { marginRight: '1rem' },
+          style: { margin: '0 1rem' },
         },
         items: [
           {

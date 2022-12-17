@@ -46,7 +46,7 @@ export default function Home() {
       description="Description will go into a meta tag in <head />"
     >
       <HomepageHeader />
-      <main style={{ minHeight: '1000px' }}>
+      <main>
         <HomepageFeatures />
       </main>
     </Layout>

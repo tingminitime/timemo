@@ -85,7 +85,7 @@ li.icon-vue > .menu__list-item-collapsible {
   }
 }
 
-/* --- 裝飾 --- */
+/* --- Hover、Active 裝飾 --- */
 .menu__list .menu__list {
   li {
     margin-top: 0;
@@ -96,11 +96,11 @@ li.icon-vue > .menu__list-item-collapsible {
     border-radius: 0;
 
     &.menu__link--active {
-      border-left: 1px solid hsl(0, 0%, 30%);
+      border-left: 3px solid var(--ifm-color-primary-lighter);
     }
 
     &:hover {
-      border-left-color: hsl(0, 0%, 30%);
+      border-left-color: var(--ifm-color-primary-lighter);
     }
   }
 }
@@ -111,11 +111,11 @@ li.icon-vue > .menu__list-item-collapsible {
       border-left: 1px solid hsl(0, 0%, 30%);
 
       &.menu__link--active {
-        border-left: 1px solid hsl(0, 0%, 75%);
+        border-left: 3px solid var(--ifm-color-primary-lighter);
       }
 
       &:hover {
-        border-left-color: hsl(0, 0%, 75%);
+        border-left-color: var(--ifm-color-primary-lighter);
       }
     }
   }

@@ -1,0 +1,261 @@
+---
+sidebar_label: 什麼是 this ?
+sidebar_position: 2
+---
+
+# JavaScript - this
+
+> 此筆記參考 Huli 文章 [淺談 JavaScript 頭號難題 this：絕對不完整，但保證好懂](https://blog.huli.tw/2019/02/23/javascript-what-is-this/) 撰寫。
+
+## `Call()` & `Apply()` 運用
+
+### Function 調用方式
+
+1. `fn(arguments)` ( 一般調用，屬於語法糖 )
+2. `fn.call(this指向, arguments)` ( 隱式調用 )
+3. `fn.apply(this指向, [arguments])` ( 隱式調用 )
+
+```jsx showLineNumbers
+function test() {
+  console.log('test')
+}
+
+test() === test.call() // true
+test() === test.apply() // true
+```
+
+<br />
+
+### `call` 和 `apply` 的區別僅僅是第二個參數的差異
+
+1. `call` 可以從第 2 個參數傳到 n 個參數 `fn.call(undefined, 1, 2, 3, 4...)`。
+2. `apply` 在第 2 個參數傳入陣列，後面再傳入則無效 `fn.apply(undefined, [1, 2, 3, 4...])`。
+
+<br />
+
+`call()` 可以傳入多個參數 :
+
+```jsx showLineNumbers
+function test(a, b, c) {
+  console.log(arguments)
+}
+
+test.call(undefined, 1, 2, 3)
+// Arguments(3) [1, 2, 3]
+```
+
+`apply()` 則是傳入一個陣列參數 :
+
+```jsx showLineNumbers
+function test(a, b, c) {
+  console.log(arguments)
+}
+
+// highlight-next-line
+test.apply(undefined, [1, 2, 3])
+// Arguments(3) [1, 2, 3]
+```
+
+`call()` 傳入陣列 :
+
+```jsx showLineNumbers
+function test(a, b, c) {
+  console.log(arguments)
+}
+
+test.call(undefined, [1, 2, 3])
+// Arguments [[1, 2, 3]]
+```
+
+`apply()` 傳入多個陣列參數沒用 :
+
+```jsx showLineNumbers
+function test(a, b, c) {
+  console.log(arguments)
+}
+
+test.apply(undefined, [1, 2, 3], [4, 5, 6], [7, 8, 9])
+// Arguments(3) [1, 2, 3]
+```
+
+### `call` 和 `apply` 是為了改變 `this` 指向而存在的
+
+```jsx
+const obj1 = {
+  num: 20,
+  fn(n) {
+    console.log(this.num + n)
+  },
+}
+
+const obj2 = {
+  num: 15,
+  fn(n) {
+    console.log(this.num - n)
+  },
+}
+
+obj1.fn(10) // ?
+obj1.fn.call(obj2, 10) // ?
+```
+
+<details>
+  <summary>
+    <code>obj1.fn(10)</code> 的執行結果 ?
+  </summary>
+  <p>
+    <code>30</code>，由 obj1 呼叫 <code>fn(10)</code>，因此 <code>this</code>{' '}
+    指向 <code>obj1</code>。
+  </p>
+</details>
+
+<details>
+  <summary>
+    <code>obj1.fn.call(obj2, 10)</code> 的執行結果 ?
+  </summary>
+  <p>
+    <code>25</code>，因為 <code>this</code> 已經指向 <code>obj2</code>，所以{' '}
+    <code>obj1</code> 的 <code>fn(n)</code> 裡面所取得的 <code>this.num</code>{' '}
+    會是 <code>obj2</code> 的 <code>num: 15</code>。
+  </p>
+</details>
+
+<br />
+
+## 如何得知 this 指向誰 ?
+
+💡 一旦脫離了物件，不太需要關注 `this` 的值，因為沒什麼意義。
+
+```jsx showLineNumbers
+// 無意義的 this
+function hello() {
+  console.log(this)
+}
+
+hello() // ?
+```
+
+1. 嚴格模式回傳 `undefined`
+2. 非嚴格模式回傳 `window`
+3. 非嚴格模式，node.js 回傳 `global`
+
+:::info
+`this` 的值與作用域、程式碼的位置在哪裡完全無關，只跟**「你如何呼叫」**有關。
+:::
+
+範例 :
+
+```jsx showLineNumbers
+const obj = {
+  num: 1,
+  hello() {
+    console.log(this)
+  },
+}
+
+obj.hello() // {num: 1, hello: ƒ}
+const hey = obj.hello
+hey() // window
+```
+
+誰呼叫函式，就把誰放進 call 第一個參數 :
+
+```jsx showLineNumbers
+obj.hello.call(obj) // this 指向 obj，印出 {num: 1, hello: ƒ}
+hey.call() // this 指向 window，印出 Window{...}
+```
+
+<br />
+
+變異題 :
+
+```jsx showLineNumbers
+const num = 10
+const obj = {
+  num: 20,
+  fn() {
+    function test() {
+      console.log(this.num)
+    }
+    test()
+  },
+}
+
+obj.fn() // ?
+```
+
+<details>
+  <summary>
+    <code>obj.fn()</code> 的執行結果為何 ?
+  </summary>
+  <p>
+    答案是 <code>undefined</code>
+  </p>
+  <p>
+    真正呼叫 <code>this</code> 的是 <code>test</code> 這個函式，改成使用 call
+    呼叫 : <code>test.call()</code>
+    ，在沒有指定 call 第一個參數時，都是預設綁定全域，也就是 <code>window</code>
+    。
+  </p>
+  <p>
+    若今天外層的 <code>num</code> 是使用
+    <code>var</code> 宣告，則答案會是 <code>10</code>，但 <code>let</code> 和 <code>
+      const
+    </code>
+    都有自己的區塊作用域，因此在 <code>this</code> 指向全域下讀取不到{' '}
+    <code>num</code>，所以為
+    <code>undefined</code>。
+  </p>
+</details>
+
+<br />
+
+## this 面試題
+
+### 1. this 是什麼 ? 什麼是 this ? this 是什麼是 this ? 什麼是 this 是什麼 ? ( 夠了...
+
+每一個 function 在被執行的時候都會有一個 reference ( 參照 ) 指向 **所屬的環境** ，這就是 **this**。
+
+<br />
+
+### 2. Function 有哪些調用的方式 ? Function 裡面的 this 又是指向誰 ?
+
+**一般調用**<br />
+`fn()`，function ( `fn()` ) 的 `this` 指向全域物件，非嚴格模式下為 `window`，嚴格模式下為 `undefined`。
+
+**物件中調用**<br />
+`obj.fn()`，function ( `obj.fn()` ) 裡面的 this 指向呼叫他的物件 ( `obj` )。
+
+**建構式中調用**<br />
+`const john = new Person()`，建構式 ( `Person` ) 的 `this` 指向被建構的物件 ( `john` )。
+
+**隱式調用**<br />
+`fn.call()` `fn.apply()` `fn.bind()`，使用 call、apply、bind 方式將第一個參數指定 this 指向任何物件。
+
+### 3. 以下這個 this 代表什麼呢 ?
+
+```jsx showLineNumbers
+function a() {
+  console.log(this)
+}
+```
+
+<details>
+  <summary>Answer</summary>
+  不知道，<code>this</code> 的值與作用域和程式碼位置完全無關，只跟<strong>
+    「你如何呼叫」
+  </strong>有關。
+</details>
+
+<br />
+
+## Reference
+
+---
+
+- [淺談 JavaScript 頭號難題 this：絕對不完整，但保證好懂](https://blog.huli.tw/2019/02/23/javascript-what-is-this/)
+- [[面試] 前端工程師一定要會的 JS 觀念題-中英對照之上篇](https://medium.com/starbugs/%E9%9D%A2%E8%A9%A6-%E5%89%8D%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%AB%E4%B8%80%E5%AE%9A%E8%A6%81%E6%9C%83%E7%9A%84-js-%E8%A7%80%E5%BF%B5%E9%A1%8C-%E4%B8%AD%E8%8B%B1%E5%B0%8D%E7%85%A7%E4%B9%8B%E4%B8%8A%E7%AF%87-3b0a3feda14f#ff68)
+
+<br />
+
+###### tags: `JavaScript` `讀書會` `this`

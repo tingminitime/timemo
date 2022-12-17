@@ -1,1 +1,118 @@
 @use '@site/src/scss/mixins';
+
+.container {
+  display: flex;
+  flex-direction: column;
+  column-gap: 2rem;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 1rem;
+
+  @include mixins.mobile {
+    padding: 3rem 0.75rem;
+  }
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.5rem;
+  max-width: 956px;
+  width: 100%;
+  padding: 0 20px;
+  &:hover {
+    .card::after {
+      opacity: 1;
+    }
+  }
+}
+
+.card {
+  background-color: rgba(255, 255, 255, 0.1);
+  height: 260px;
+  width: 100%;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  container-type: inline-size;
+  container-name: card;
+
+  &:hover {
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+[data-theme='light'] {
+  .card {
+    background-color: hsl(210, 33%, 75%);
+  }
+}
+
+.card::before {
+  background: radial-gradient(
+    800px circle at var(--mouse-x) var(--mouse-y),
+    rgba(255, 255, 255, 0.06),
+    transparent 40%
+  );
+  z-index: 3;
+}
+
+.card::after {
+  background: radial-gradient(
+    400px circle at var(--mouse-x) var(--mouse-y),
+    rgba(255, 255, 255, 0.3),
+    transparent 40%
+  );
+  z-index: 1;
+}
+
+[data-theme='light'] {
+  .card::before {
+    background: radial-gradient(
+      800px circle at var(--mouse-x) var(--mouse-y),
+      hsla(210, 33%, 92%, 0.75),
+      transparent 40%
+    );
+  }
+
+  .card::after {
+    background: radial-gradient(
+      400px circle at var(--mouse-x) var(--mouse-y),
+      hsla(210, 33%, 80%, 0.9),
+      transparent 40%
+    );
+  }
+}
+
+.card::before,
+.card::after {
+  content: '';
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 500ms;
+  border-radius: inherit;
+}
+
+.card > .card-content {
+  height: calc(100% - 2px);
+  width: calc(100% - 2px);
+  border-radius: inherit;
+  background-color: rgb(23, 23, 23);
+  position: relative;
+  z-index: 2;
+}
+
+[data-theme='light'] {
+  .card > .card-content {
+    background-color: hsl(210, 29%, 97%);
+  }
+}

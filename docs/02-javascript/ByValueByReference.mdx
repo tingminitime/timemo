@@ -1,0 +1,726 @@
+---
+sidebar_label: 傳值、傳址、傳共享
+sidebar_position: 1
+---
+
+# 傳值、傳址、傳共享
+
+Call by value、Call by Reference、Call by sharing
+
+## 開始之前
+
+在學習 JavaScript 路上，免不了要熟悉所謂 **傳值 ( call by value )** 以及 **傳址 ( call by reference )** 的觀念 ~~(當初因為不熟悉這鬼東西放棄 JS 好幾次)~~
+
+先感謝 **六角學院** 讓我透過直播班有機會探討這個主題，寫下第一篇公開的技術筆記。
+
+這篇筆記我會以比較實作的方式，探討 **變數 ( Variable )、記憶體位址 ( Memory Address )、值 ( Value )** 之間的~~三角~~關係，讓我們開始吧 !
+
+<br />
+
+## 基本型別 ( Primity type )
+
+先讓我們暖身一下 :
+
+```javascript showLineNumbers
+let a = 10
+a += 1
+console.log(a) // ?
+```
+
+<details>
+  <summary>這個答案應該顯而易見</summary>
+  <p>a 的值會是 11</p>
+</details>
+
+<br />
+
+那麼在記憶體中，這是怎麼呈現的呢 ? 讓我們來**畫個圖表** !
+
+**步驟 1**. `let a = 10;`
+
+| 變數 | 記憶體位址 | 值  |
+| :--: | :--------: | :-: |
+|      |    0x0     | 10  |
+|  a   |    0x1     | 0x0 |
+
+其實這圖表就是在模擬 **變數** 與 **值** 在 **記憶體** 的存取流程，記憶體位址 0x0、0x1、0x2...，都是代表記憶體的某個空間位址，就像是你家的門牌啦 !
+
+步驟 1 會先在記憶體的某個空間位址，存放一個 10 的值，然後再將 變數 a 的值，指向這個 10 所在的記憶體位址，所以此時 console.log(a)，會印出 number 型別的 10。
+
+~~りしれしゃさ小~~
+如果覺得太難懂，~~沒關係這不是你的問題~~，我來說個故事…
+
+今天有一間教室 **(記憶體)**，教室裡某個桌上 **( 0x0 )**，放了 10 塊錢 **( number 10 )**，看了一下這桌子是誰的，原來是 a 同學的 **( 變數 a 的值指向 0x0 )**，也就是 a 同學擁有這 10 塊錢 ( **`let a = 10`** )。
+
+---
+
+**步驟 2.** `a += 1`
+
+| 變數 | 記憶體位址 |    值     |
+| :--: | :--------: | :-------: |
+|      |    0x0     |    10     |
+|  a   |    0x1     | **_0x3_** |
+|      |    0x2     |  **_1_**  |
+|      |    0x3     | **_11_**  |
+
+此時 a 同學走在走廊上 ( **0x2** )，發現走廊地板有 1 塊錢 ( **0x2 的值為 1** )，於是 a 同學撿起來收進口袋 **( 變數 a 的值與 0x2 的值相加運算 )**，所以 a 同學此時有 11 塊 **( 在新的記憶體空間放進運算後的結果 11 這個值，並將變數 a 的值重新賦值指向至 0x3，求得值為 11 )**。
+
+什麼 !? 你說我這樣說你聽不懂 ?
+
+<details>
+  <summary>---</summary>
+  對不起... 〒▽〒
+</details>
+
+---
+
+**暖身完畢，緊接著我們來延伸上一個例子 :**
+
+```javascript showLineNumbers
+let a = 10
+let b = a
+console.log(b) // 10
+```
+
+這個例子我們可以很直觀講出 console 印出來的結果是 10，因為 b 等於 a 嘛 !
+那我們來多加一行程式碼，將 a 重新賦值看看 :
+
+```javascript showLineNumbers
+let a = 10
+let b = a
+a = 20
+console.log(b) // ?
+```
+
+過去初嚐 Javascript 的我，很直覺地說出「 那麼簡單，這我知道 ! `b` 會印出 20 啊，因為 `b` 等於 `a`，現在 `a` 重新給他一個 20 的值，所以 `b` 也是 20 對啊 ! 」
+然後我默默開啟 devtools 的 console 試試，試完後，我表情面有難色，心裡 OS : WTF...
+
+<details>
+  <summary>點我看答案</summary>
+  <img
+    src="https://i.imgur.com/fXXvLZe.jpg"
+    alt=""
+  />
+  <p>
+    <strong>嗯... b 還是 10 呢</strong> <s>(然後就放棄 JS 了)</s>
+  </p>
+</details>
+
+---
+
+修但幾勒... 先不要這麼快放棄，我們一樣**畫個圖表**來一個一個步驟看 :
+
+**步驟 1.** `let a = 10;`
+
+| 變數 | 記憶體位址 | 值  |
+| :--: | :--------: | :-: |
+|      |    0x0     | 10  |
+|  a   |    0x1     | 0x0 |
+
+步驟 1 跟上一個例子的步驟 1 一樣，但我們換個故事來說...
+
+今天有一棟宿舍 **(記憶體)**，在這棟宿舍發現有 10 個比特幣在某房間，看了一下房號，原來是 0x0 號 **(記憶體位址)** 啊 ! 這時來了一個人，他是 a 先生 **( `let a` )**，a 先生表示這房間 **( 0x0 )** 是他租的 **( 變數 a 的值指向 0x0 )**，也就是 a 先生擁有房間裡面這 10 個比特幣 **( `a = 10` )** ~~(羨慕)~~
+
+---
+
+**接下來步驟 2.** `let b = a;`
+
+|  變數   | 記憶體位址 |    值     |
+| :-----: | :--------: | :-------: |
+|         |    0x0     |    10     |
+|    a    |    0x1     |    0x0    |
+| **_b_** |    0x2     | **_0x0_** |
+
+此時跳出一個 b 先生 **( `let b` )**，b 先生說他也租這房間 **( 變數 b 複製變數 a 的值 0x0 )**，也就是 a 先生和 b 先生是室友，他們其實是共同擁有這 10 個比特幣 **( `a === b // true` )** ~~(還是羨慕)~~
+
+---
+
+**最後步驟 3.** `a = 20;`
+
+| 變數 | 記憶體位址 |    值     |
+| :--: | :--------: | :-------: |
+|      |    0x0     |    10     |
+|  a   |    0x1     | **_0x3_** |
+|  b   |    0x2     |    0x0    |
+|      |    0x3     | **_20_**  |
+
+然後又在這棟宿舍的某個房間發現到 20 個比特幣，看一下房號，是 0x3 號 **(記憶體位址)**，a 看到有人發現這 20 個比特幣，手忙腳亂地衝過來解釋說：「哈哈是我的啦」，原來 a 先生日前跟 b 先生吵架，已經不租那間房間了，還跟 b 先生說：「沒關係那 10 個比特幣送你，我才不稀罕勒」 ~~(拜託送我)~~，反正 a 先生還有藏在 0x3 號房的 20 個比特幣 **( 變數 a 重新賦值指向到 0x3 )**
+
+:::info
+從上面的故事最後可以得知，a 先生擁有 20 個比特幣 **( 變數 a 的值是 20 )**，b 先生擁有 10 個比特幣 **( 變數 b 的值是 10 )**。
+:::
+
+![devtool](https://i.imgur.com/fXXvLZe.jpg)
+
+當然，值換成 **字串型別 ( strig )** 也是一樣的結論 :
+
+![devtool](https://i.imgur.com/EPSXjZo.jpg)
+
+<br />
+
+理解之後，我們來做個稍微複雜的例子 :
+
+```javascript showLineNumbers
+let a = 'A'
+let b = 'A'
+let c = 'A'
+b = 'B'
+c = 'C'
+a += b
+a += c
+console.log(a, b, c) // ?
+```
+
+( 截至 [Alex JS30 Day14 影片片段](https://youtu.be/sxe-oahUARI?t=1430) )
+
+**步驟 1.** 一樣先畫圖表，將程式碼 1~3 行在記憶體的位址畫上去 :
+
+| 變數 | 記憶體位址 | 值  |
+| :--: | :--------: | :-: |
+|      |    0x0     | 'A' |
+|  a   |    0x1     | 0x0 |
+|  b   |    0x2     | 0x0 |
+|  c   |    0x3     | 0x0 |
+
+當然，為了控制記憶體不要大爆炸，宣告變數並賦予一個 **基本型別 ( Primitive type )** 的值時，會去找記憶體有沒有一模模一樣樣的值，若有一樣的，就 **_複製_** 那個值的記憶體位址當作自己 ( 變數 ) 的值，就不會再重覆多做一個一樣的值，但若值是 **物件型別 ( Object type )** 的話，代誌丟毋係哩修欸價里甘丹，稍後會來探討。
+
+---
+
+**步驟 2.** 程式碼第 4 行 `b = 'B';`
+
+| 變數 | 記憶體位址 |    值     |
+| :--: | :--------: | :-------: |
+|      |    0x0     |    'A'    |
+|  a   |    0x1     |    0x0    |
+|  b   |    0x2     | **_0x4_** |
+|  c   |    0x3     |    0x0    |
+|      |    0x4     | **_'B'_** |
+
+變數 b 重新賦值指向到新的值 'B' 所在的位址 0x4
+
+---
+
+**步驟 3.** 程式碼第 5 行 `c = 'C';`
+
+| 變數 | 記憶體位址 |    值     |
+| :--: | :--------: | :-------: |
+|      |    0x0     |    'A'    |
+|  a   |    0x1     |    0x0    |
+|  b   |    0x2     |    0x4    |
+|  c   |    0x3     | **_0x5_** |
+|      |    0x4     |    'B'    |
+|      |    0x5     | **_'C'_** |
+
+變數 c 重新賦值指向到新的值 'C' 所在的位址 0x5
+
+---
+
+**步驟 4.** 程式碼第 6 行 `a += b;`
+
+| 變數 | 記憶體位址 |     值     |
+| :--: | :--------: | :--------: |
+|      |    0x0     |    'A'     |
+|  a   |    0x1     | **_0x6_**  |
+|  b   |    0x2     |    0x4     |
+|  c   |    0x3     |    0x5     |
+|      |    0x4     |    'B'     |
+|      |    0x5     |    'C'     |
+|      |    0x6     | **_'AB'_** |
+
+變數 a 原本的值是 'A' **( 0x0 )**，而 b 的值是 'B' **( 0x4 )**，字串相加連接後得到 'AB' 這個值 **( 在記憶體空間 0x6 產生出 'AB' )**，再賦予給 a，此時 a 的值是 'AB' **( 0x6 )**
+
+---
+
+**步驟 5.** 程式碼第 7 行 `a += c;`
+
+| 變數 | 記憶體位址 |     值      |
+| :--: | :--------: | :---------: |
+|      |    0x0     |     'A'     |
+|  a   |    0x1     |  **_0x7_**  |
+|  b   |    0x2     |     0x4     |
+|  c   |    0x3     |     0x5     |
+|      |    0x4     |     'B'     |
+|      |    0x5     |     'C'     |
+|      |    0x6     |    'AB'     |
+|      |    0x7     | **_'ABC'_** |
+
+變數 a 在上一個步驟完成後的值是 'AB' **( 0x6 )**，而 c 的值是 'C' **( 0x5 )**，字串相加連接後得到 'ABC' 這個值，再賦予給 a，此時 a 的值是 'ABC' **( 0x7 )**
+
+如此我們就能清楚得知 `console.log(a, b, c)` 的結果 :
+
+<details>
+  <summary>點我看答案</summary>
+  <img
+    src="https://i.imgur.com/sTMqye9.jpg"
+    alt=""
+  />
+  <p>
+    <strong>印出 </strong>
+    <code>ABC B C</code>
+  </p>
+</details>
+
+---
+
+:::success
+**畫圖表步驟中，這種複製某個值的行為就是大家所通稱的 「傳值 ( call by value )」。**
+:::
+
+其實前面有提到一個關鍵字 ： **_複製 ( copy )_**
+
+以下 **基本型別 ( Primitive type )** 的值 :
+
+- 字串 string
+- 數字 number
+- 布林值 boolean
+- 空值 null
+- 未定義 undefined
+- 符號 symbol
+
+在記憶體複製來複製去，就是 **傳值 ( call by value )** 的概念，不過我認為這只是一個概念而已，實際上還是用畫圖表的記憶方式會最印象深刻。
+
+講了那麼多基本型別的傳值，接下來就讓我們來探討 **物件型別 ( Object type )** 怎麼在記憶體中運作吧 !
+
+<br />
+
+## 物件型別 ( Object type )
+
+除了 **基本型別 ( Primitive type )** 以外的值，都是屬於 **物件型別 ( Object type )**。
+
+常見的 物件 Object { }、陣列 Array [ ]、函式 function( ) {...}，皆是屬於**物件型別**。
+
+為什麼 **陣列 Array** 和 **函式 function** 也是屬於物件型別 ? ~~關於這個問題，以後我們專門做一篇筆記講解~~。
+
+:::info
+而 **物件型別 ( Object type )** 皆是以 **傳址 ( call by reference )** 的方式在記憶體中求值。
+:::
+
+其實上面這段話，單就技術名詞的定義解釋，是蠻有爭議的，怎麼說呢 ? 我們接下來做幾個實例 :
+
+```javascript showLineNumbers
+let person1 = {
+  name: 'Tim',
+}
+
+let person2 = person1
+
+person1.name = 'Ray'
+
+console.log(person2.name) // ?
+```
+
+啊啊我知道，別想再騙我了，person2 只是複製 person1 的值，所以這裡改了 person1 的 name 屬性，不會動到 person2，因為他們兩個是獨立的嘛 ! (得意)
+
+<details>
+  <summary>點我看答案</summary>
+  <img
+    src="https://i.imgur.com/tT2sj5C.jpg"
+    alt=""
+  />
+  <p>( OS : !%@#$^@&@#%@&ˇˋ& )</p>
+  <p>
+    <strong>
+      嗯... 答案是 <code>Ray</code>，<code>person2.name</code> 的值也被動到了
+    </strong>
+  </p>
+  <p>
+    <s>每個初學 JS 都要被騙過一次的題目</s>
+  </p>
+  <p>什麼 ? 你問我有沒有被騙過 ?</p>
+  <p>
+    <s>當然被騙過，不然也不會放棄 JS 那麼多次...</s>
+  </p>
+</details>
+
+<br />
+
+好，我知道你和我都一樣，心中有股怒火難以發洩，讓我們再用上面學到的畫圖表方式來拆解 :
+
+**步驟 1.** `let person1 = { name: 'Tim' };`
+
+|  變數   | 記憶體位址 |       值        |
+| :-----: | :--------: | :-------------: |
+|         |    0x0     | { name: 'Tim' } |
+| person1 |    0x1     |       0x0       |
+
+這裡不難看出來，變數 `person1` 的值是指向 0x0 的物件 `{ name: 'Tim' }`
+
+---
+
+**步驟 2.** `let person2 = person1;`
+
+|     變數      | 記憶體位址 |       值        |
+| :-----------: | :--------: | :-------------: |
+|               |    0x0     | { name: 'Tim' } |
+|    person1    |    0x1     |       0x0       |
+| **_person2_** |    0x2     |    **_0x0_**    |
+
+變數 `person2` 複製變數 `person1` 的值指向 0x0 這個物件 `{ name: 'Tim' }`
+
+---
+
+**步驟 3.** `person1.name = 'Ray';`
+
+|  變數   | 記憶體位址 |          值           |
+| :-----: | :--------: | :-------------------: |
+|         |    0x0     | **_{ name: 'Ray' }_** |
+| person1 |    0x1     |          0x0          |
+| person2 |    0x2     |          0x0          |
+
+現在我們要 **修改** 變數 `person1` 這個物件的屬性 name 的值為 `'Ray'`。
+
+:::info
+這邊講 **修改** 是因為我們使用 **特性存取( property access )**，也就是 `person1.name` 的 `.` 去取得值並且修改為 `'Ray'`( 或是使用 **鍵值存取 key access** : `person1['name']`，也是一樣 )，至於這個 `'Ray'` 到底有沒有多占用一個記憶體位址，我比較傾向理解是 `'Ray'` 霸佔了原本的 `'Tim'` 值所在的位置，然後因為 `'Tim'` 值沒有被使用到而被 JavaScript 的記憶體回收機制回收了，當然講這個太深入，~~而且我也不太懂~~，我們就先理解成**修改**或是**覆蓋**就好。
+:::
+
+因為 person1 和 person2 都同樣指向 0x0 這個記憶體位址，因此當 0x0 位址的 name 屬性的值修改成 `'Ray'`，person1 和 person2 的值也都同樣是 `{ name: 'Ray' }` 這個物件。
+
+:::success
+**這就是 JavaScript 中，大家所通稱的 「傳址 ( call by reference )」。**
+:::
+
+<br />
+
+**但... 好像哪裡怪怪 der...**
+
+有沒有覺得步驟 2 很熟悉，跟我們講基本型別傳值的第一個例子，是一樣使用 **_複製_** 的方式，person2 複製 person1 的值，那那那... 這不就是 **「傳值 ( call by value )」** ?
+
+![meme1](https://i.imgur.com/YVBhJh5.jpg)
+
+其實這麼理解也是沒什麼問題的，之所以會稱作這是 **call by reference** ，是因為複製的值是 **記憶體指向**，所以如果修改到這個記憶體位址 ( 0x0 ) 的值，person1 和 person2 傳出來的值都會跟著被改變，就有那種 **參考 ( reference )** 的意味在了。
+
+你可能會問說，那 **基本型別 ( Primitive type )** 不也是 **_複製記憶體指向_** 嗎 ?
+我認為沒有錯，但其實基本型別的值若有變動，說**修改**比較不貼切，應該說是**賦予新的值**，這個新的值是會多占用一個記憶體空間的，也就可以稱作 **傳址 ( by reference )** 其實是 **傳值 ( by value )** 的其中一種方式。
+
+:::info
+但是為什麼不是**在一個記憶體空間創建新的值**，例如在 0x3 這個位址創建新的值是`{ name: 'Ray'}`，然後 person1 的值為指向 0x3，與 person2 的物件彼此獨立呢 ?
+:::
+
+別急，這不就來了嘛，讓我們修改一下剛剛那個例子 :
+
+```javascript showLineNumbers
+let person1 = {
+  name: 'Tim',
+}
+
+let person2 = person1
+
+person1 = { name: 'Ray' }
+
+console.log(person2.name) // ?
+```
+
+究竟會印出什麼呢 ?
+
+<details>
+  <summary>點我看答案</summary>
+  <img
+    src="https://i.imgur.com/FkpFhuu.jpg"
+    alt=""
+  />
+  <p>
+    <strong>
+      答案是 <code>Tim</code>
+    </strong>
+  </p>
+  <br />
+  <img
+    src="https://i.imgur.com/OY9PpPy.jpg"
+    alt="meme"
+  />
+</details>
+
+---
+
+好，我知道你已經懶得吐槽了... 廢話不多說直接畫圖表 !
+
+**步驟 1.** `let person1 = { name: 'Tim' };`
+
+|  變數   | 記憶體位址 |       值        |
+| :-----: | :--------: | :-------------: |
+|         |    0x0     | { name: 'Tim' } |
+| person1 |    0x1     |       0x0       |
+
+變數 `person1` 的值一樣是指向 0x0 這個位址的值 ( 物件 `{ name: 'Tim' }` )
+
+---
+
+**步驟 2.** `let person2 = person1;`
+
+|     變數      | 記憶體位址 |       值        |
+| :-----------: | :--------: | :-------------: |
+|               |    0x0     | { name: 'Tim' } |
+|    person1    |    0x1     |       0x0       |
+| **_person2_** |    0x2     |    **_0x0_**    |
+
+變數 `person2` 一樣複製變數 `person1` 的值，指向 0x0 這個位址的值 ( 物件 `{ name: 'Tim' }` )
+
+---
+
+**步驟 3.** `person1 = { 'Ray' };`
+
+|  變數   | 記憶體位址 |          值           |
+| :-----: | :--------: | :-------------------: |
+|         |    0x0     |    { name: 'Tim' }    |
+| person1 |    0x1     |       **_0x3_**       |
+| person2 |    0x2     |          0x0          |
+|         |    0x3     | **_{ name: 'Ray' }_** |
+
+這邊就要注意了，當我們使用**物件實體語法 ( Object literal )**，也就是使用 { } 大括號包住 key and value ( `{ name: 'Ray' }` )，是會額外多占用一個記憶體空間 ( 0x3 )，然後將變數 `person1` 重新賦值指向記憶體位址 0x3。
+
+:::info
+這種創建新的值，並修改 person1 記憶體指向的行為，不就是「**傳值 ( by value )**」的概念嗎 ?
+:::
+
+也就是說，**物件型別 ( Object type )** 同時存在 **傳值** 及 **傳址** 兩個概念呢，同樣類似的情況也發生在 **函式 ( Function )** 中，讓我們來試試 :
+
+```javascript showLineNumbers
+function add(a, b) {
+  a += b
+  console.log(a) // 30
+}
+let x = 10
+let y = 20
+add(x, y)
+```
+
+Function 內的 a 值為 30，怎麼求得的呢 ?
+
+**步驟 1.** `let x = 10;`
+
+| 變數 | 記憶體位址 | 值  |
+| :--: | :--------: | :-: |
+|      |    0x0     | 10  |
+|  x   |    0x1     | 0x0 |
+
+---
+
+**步驟 2.** `let y = 20;`
+
+| 變數 | 記憶體位址 | 值  |
+| :--: | :--------: | :-: |
+|      |    0x0     | 10  |
+|  x   |    0x1     | 0x0 |
+|      |    0x2     | 20  |
+|  y   |    0x3     | 0x2 |
+
+---
+
+**步驟 3.** `add(x, y);`
+
+|  變數   | 記憶體位址 |    值     |
+| :-----: | :--------: | :-------: |
+|         |    0x0     |    10     |
+|    x    |    0x1     |    0x0    |
+|         |    0x2     |    20     |
+|    y    |    0x3     |    0x2    |
+|         |    0x4     | **_0x0_** |
+| **_a_** |    0x5     | **_0x4_** |
+|         |    0x6     | **_0x2_** |
+| **_b_** |    0x7     | **_0x6_** |
+
+我們知道 function 的引數是區域變數，執行 `add(x, y);` 時，會將 x 和 y 的值**複製** **( 在 0x4 的空間複製 x 的值，在 0x6 的空間複製 y 的值 )**，並傳給 function 的引數 a 與 b 承接 **( a 的值指向 0x4，0x4 又指向 0x0，同理套用到 b )**。
+
+---
+
+**步驟 4.** `a += b;`
+
+| 變數 | 記憶體位址 |    值     |
+| :--: | :--------: | :-------: |
+|      |    0x0     |    10     |
+|  x   |    0x1     |    0x0    |
+|      |    0x2     |    20     |
+|  y   |    0x3     |    0x2    |
+|      |    0x4     |    0x0    |
+|  a   |    0x5     | **_0x8_** |
+|      |    0x6     |    0x2    |
+|  b   |    0x7     |    0x6    |
+|      |    0x8     | **_30_**  |
+
+將運算結果的值 30 存放到新的記憶體空間 **0x8**，並且**變數 a** 重新賦值指向到這個 **0x8**。
+
+:::success
+**這種 function 傳入基本型別的值，就是使用「傳值 ( call by value )」的概念。**
+:::
+
+---
+
+<br />
+
+那... 如果 function 是傳入 **物件 ( Object )** 呢 ?
+
+```javascript showLineNumbers
+function updateObj(insideObj) {
+  insideObj.name = 'Ray'
+}
+
+let outsideObj = { name: 'Tim' }
+updateObj(outsideObj)
+
+console.log(outsideObj) // ?
+```
+
+<details>
+  <summary>點我看答案</summary>
+  <img
+    src="https://i.imgur.com/pNxnAMj.jpg"
+    alt=""
+  />
+  <p>
+    看來 <code>outsideObj</code> 這個物件裡面屬性 name 對應的值 <code>Tim</code>{' '}
+    成功被<strong>修改</strong>成 <code>Ray</code> 了 !
+  </p>
+</details>
+
+**畫圖拆解步驟 :**
+
+**步驟 1.** `let outsideObj = { name: 'Tim' };`
+
+|    變數    | 記憶體位址 |       值        |
+| :--------: | :--------: | :-------------: |
+|            |    0x0     | { name: 'Tim' } |
+| outsideObj |    0x1     |       0x0       |
+
+---
+
+**步驟 2.** `updateObj(outsideObj);`
+
+|      變數       | 記憶體位址 |       值        |
+| :-------------: | :--------: | :-------------: |
+|                 |    0x0     | { name: 'Tim' } |
+|   outsideObj    |    0x1     |       0x0       |
+|                 |    0x2     |    **_0x0_**    |
+| **_insideObj_** |    0x3     |    **_0x2_**    |
+
+執行 `updateObj(outsideObj);` 時，會將 `outsideObj` 的值複製 ( 在 0x2 的空間複製 `outsideObj` 的值 )，並傳給 function 的引數 `insideObj` 承接 ( `insideObj` 的值指向 0x2，0x2 又指向 0x0 )。
+
+---
+
+**步驟 3.** `insideObj.name = 'Ray';`
+
+|    變數    | 記憶體位址 |          值           |
+| :--------: | :--------: | :-------------------: |
+|            |    0x0     | **_{ name: 'Ray' }_** |
+| outsideObj |    0x1     |          0x0          |
+|            |    0x2     |          0x0          |
+| insideObj  |    0x3     |          0x2          |
+
+先前我們說過，`insideObj.name` 這種 **特性存取( property access )** 方式，會取得值並且**修改**他，而 `insideObj` 的值依然是指向 0x2，並且 0x2 的值指向 0x0，藉由對 `insideObj` 的修改，`outsideObj` 的值同樣也是指向 0x0，求得的值也就會是 **`{ name: 'Ray' }`**。
+
+:::success
+**所以這邊 function 就是使用「傳址 ( call by reference )」的概念。**
+:::
+
+<br />
+
+那如果我偏偏要在 function 內把物件**重新賦值**呢 ?
+
+```javascript showLineNumbers
+function updateObj(insideObj) {
+  insideObj = { name: 'Ray' }
+  console.log('insideObj: ', insideObj) // ?
+}
+
+let outsideObj = { name: 'Tim' }
+updateObj(outsideObj)
+
+console.log('outsideObj: ', outsideObj) // ?
+console.log('insideObj: ', insideObj) // ?
+```
+
+<details>
+  <summary>點我看答案</summary>
+  <img
+    src="https://i.imgur.com/dpd4eER.jpg"
+    alt=""
+  />
+  <p>
+    <strong>
+      <code>outsideObj</code> 這個物件沒有變動，而 `insideObj` 僅存在於 function
+      的塊狀作用域裡面，外面是取值不到的 ( <code>insideObj is not defined</code>{' '}
+      )。
+    </strong>
+  </p>
+  <p>
+    這... 這該不會又是 <strong>傳值 ( by value )</strong> ?
+  </p>
+</details>
+
+**拆解步驟 :**
+
+**步驟 1.** `let outsideObj = { name: 'Tim' };`
+
+|    變數    | 記憶體位址 |       值        |
+| :--------: | :--------: | :-------------: |
+|            |    0x0     | { name: 'Tim' } |
+| outsideObj |    0x1     |       0x0       |
+
+---
+
+**步驟 2.** `updateObj(outsideObj);`
+
+|      變數       | 記憶體位址 |       值        |
+| :-------------: | :--------: | :-------------: |
+|                 |    0x0     | { name: 'Tim' } |
+|   outsideObj    |    0x1     |       0x0       |
+|                 |    0x2     |    **_0x0_**    |
+| **_insideObj_** |    0x3     |    **_0x2_**    |
+
+到目前為止都與上一個例子的步驟一樣。
+
+---
+
+**步驟 3.** `insideObj = { name: 'Ray' };`
+
+|    變數    | 記憶體位址 |          值           |
+| :--------: | :--------: | :-------------------: |
+|            |    0x0     |    { name: 'Tim' }    |
+| outsideObj |    0x1     |          0x0          |
+|            |    0x2     |          0x0          |
+| insideObj  |    0x3     |       **_0x4_**       |
+|            |    0x4     | **_{ name: 'Ray' }_** |
+
+有沒有很熟悉，這就是先前提到，使用**物件實體語法 ( Object literal )**，也就是使用 `{ }` 大括號包住 key and value ( `{ name: 'Ray' }` )，額外多占用一個記憶體空間 **( 0x4 )**，然後將變數 `insideObj` 重新賦值指向 **0x4**，此時 `insideObj` 和 `outsideObj` 就是兩個獨立的物件了，而 `insideObj` 只獨立在這個 function 塊狀作用域裡，`outsideObj` 則是在這個 function 外都能取值。
+
+<br />
+
+## 總結
+
+import HighlightBlock from '@site/src/components/highlight/HighlightBlock'
+
+我們現在知道，**物件型別 ( Object type )** 可以 call by value 也可以 call by reference，所以也有人稱此為 :
+
+<HighlightBlock>
+  <strong>傳共享 ( call by sharing )</strong>
+</HighlightBlock>
+
+也就是根據**物件型別 ( Object、Array、Function )** 操作的「行為」不同，會求得不一樣的結果。
+
+![meme3](https://i.imgur.com/4tqFCuG.jpg)
+
+相信你跟我一樣有同樣的感受 ╰（‵□′）╯
+
+<br />
+
+不過我認為，不管是**傳值、傳址、傳共享**，充其量都只是一種**概念**，是方便我們在溝通時所使用的**代名詞**，但也因為對名詞的定義每個人都不盡相同，因此產生許多爭議。
+
+所以我皆是以拆解步驟，並畫圖表的方式嘗試去理解 **變數、值、記憶體** 之間的~~三角關係~~。
+上面所畫的圖表，在 JavaScript 並不是百分之百如此運作，但就是一個方便我們學習、記憶的方式，真的要深入的話，還需要探討到 Stack、Heap、淺拷貝、深拷貝，甚至是原型鍊~~這我還不知道是什麼碗糕小的東東~~。
+
+以上這篇筆記是小弟我對 **傳值 ( call by value )、傳址 ( call by reference )、傳共享 ( call by sharing )** 粗淺的見解，若筆記中其中有矛盾或錯誤的地方，還請留言指教 `(_>﹏<_)′
+
+<br />
+
+## Reference
+
+---
+
+- [深入探討 JavaScript 中的參數傳遞：call by value 還是 reference？](https://blog.huli.tw/2018/06/23/javascript-call-by-value-or-reference/)
+- [[筆記] 談談 JavaScript 中 by reference 和 by value 的重要觀念](https://pjchender.blogspot.com/2016/03/javascriptby-referenceby-value.html)
+- [[ Alex 宅幹嘛 ] 👨‍💻 深入淺出 Javascript30 快速導覽 | Day 14：JavaScript References VS Copying](https://youtu.be/sxe-oahUARI)
+- [[偷米騎巴哥]詳解傳值參考傳址參考差異](https://youtu.be/yXewP4SHXZ4)
+- [JavaScript’s Memory Model - Ethan Nam](https://medium.com/@ethannam/javascripts-memory-model-7c972cd2c239)
+
+<br />
+
+###### tags: `JavaScript` `六角學院` `JS直播班`
