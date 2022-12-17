@@ -87,7 +87,14 @@ export default function BlogPostPage(props: Props): JSX.Element {
         <BlogPostPageContent sidebar={props.sidebar}>
           <BlogPostContent />
 
-          {!isCurrentUrlBlog && <GiscusComponent></GiscusComponent>}
+          {!isCurrentUrlBlog && (
+            <GiscusComponent
+              repo="tingminitime/timemo-giscus-blog"
+              repoId="R_kgDOIolnrQ"
+              category="Announcements"
+              categoryId="DIC_kwDOIolnrc4CTH_u"
+            ></GiscusComponent>
+          )}
         </BlogPostPageContent>
       </HtmlClassNameProvider>
     </BlogPostProvider>

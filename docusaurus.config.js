@@ -47,13 +47,15 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
+          // docItemComponent: '@site/src/theme/CustomComponents/DocItem.tsx',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
-          blogPostComponent: '@site/src/theme/CustomComponent/BlogPostPage.tsx',
+          blogPostComponent:
+            '@site/src/theme/CustomComponents/BlogPostPage.tsx',
         },
         theme: {
           customCss: require.resolve('./src/scss/custom.scss'),
