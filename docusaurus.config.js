@@ -53,6 +53,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
+          blogPostComponent: '@site/src/theme/CustomComponent/BlogPostPage.tsx',
         },
         theme: {
           customCss: require.resolve('./src/scss/custom.scss'),
