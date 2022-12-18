@@ -1,6 +1,11 @@
 import React from 'react'
 
-const HighlightBlock = ({ children, bg = 'papayawhip', color = '#1b1b1d' }) => {
+const HighlightBlock = ({
+  children,
+  bg = 'papayawhip',
+  color = '#1b1b1d',
+  styles,
+}) => {
   return (
     <div
       style={{
@@ -10,6 +15,7 @@ const HighlightBlock = ({ children, bg = 'papayawhip', color = '#1b1b1d' }) => {
         borderRadius: '.5em',
         fontWeight: '500',
         marginBottom: 'var(--ifm-leading)',
+        ...styles,
       }}
     >
       {children}

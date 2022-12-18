@@ -105,3 +105,395 @@ const Satan = () => {
 const print = () => console.log(`I'm Callback`)
 setTimeout(print, 0) // Callback Function
 ```
+
+<br />
+
+可能有些人覺得 setTimeout 的例子還好，自己也很少用，那我們以一個 ES5 時代常見的 AJAX 方式來舉例 :
+
+#### 封裝 XMLHttpRequest
+
+```javascript showLineNumbers
+function ajax(method, url, onSuccess, onError) {
+  const xhr = new XMLHttpRequest()
+  xhr.open(method, url)
+  xhr.onload = function () {
+    if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) {
+      onSuccess(JSON.parse(xhr.response))
+    } else {
+      onError('error')
+    }
+  }
+  xhr.send()
+}
+```
+
+<br />
+
+此時當我們需要依照順序進行 ajax 請求，就會敲敲打開地獄的大門 ...
+
+```javascript showLineNumbers
+ajax(
+  'GET',
+  'http://localhost:3000/1',
+  res => {
+    console.log(res)
+    ajax(
+      'GET',
+      'http://localhost:3000/2',
+      res => {
+        console.log(res)
+        ajax(
+          'GET',
+          'http://localhost:3000/3',
+          res => {
+            console.log(res)
+            ajax(
+              'GET',
+              'http://localhost:3000/4',
+              res => {
+                console.log(res)
+              },
+              error => {
+                console.log(error)
+              }
+            )
+          },
+          error => {
+            console.log(error)
+          }
+        )
+      },
+      error => {
+        console.log(error)
+      }
+    )
+  },
+  error => {
+    console.log(error)
+  }
+)
+```
+
+你可能會想說，把 `onSuccess` 和 `onError` 拆出來就好啦
+
+```javascript showLineNumbers
+const successHandler = res => console.log(res)
+const errorHandler = message => console.log(message)
+
+function ajax1() {
+  ajax('GET', `${apiURL}/owner`, ajax2, errorHandler)
+}
+
+function ajax2() {
+  ajax('GET', `${apiURL}/owner`, ajax3, errorHandler)
+}
+
+function ajax3() {
+  ajax('GET', `${apiURL}/owner`, ajax4, errorHandler)
+}
+
+function ajax4() {
+  ajax('GET', `${apiURL}/owner`, successHandler, errorHandler)
+}
+```
+
+這種情況就是 Callback 還有 Callback 還有 Callback 還有 Callback ...
+
+![](https://i.imgur.com/prY7FCk.jpg)
+
+<br />
+
+想像一下，如果 `ajax1`、`ajax2`、`ajax3` 都散落在你專案的各個角落，甚至中間穿插著同步、第三方套件、非同步程式碼的執行，其中一個環節爆掉，debug 的過程會讓你多想砍人。
+
+<br />
+
+不是說這樣設計不行，但缺點實在很明顯 :
+
+### **1. 缺乏順序性，在複雜的環境中無法清晰表達邏輯**
+
+Callback Hell 除了造成程式碼測試的難度增加，也牴觸我們人類大腦的思維，思考程式碼邏輯的過程中就會讓你頭痛欲裂，進而影響到螢幕、鍵盤和滑鼠的性命安全。
+
+<br />
+
+### **2. 控制反轉，缺乏信任的程式**
+
+我們在開發過程中，時常會使用到第三方套件 API，或者你同事的 code，如果你不夠熟悉這個第三方套件，或者你不夠熟悉你同事，導致無法準確控制這些第三方套件的 API，還有你同事的 code，根本無法預測這種多重的 Callback 何時會爆炸。
+
+<br />
+
+當然可以用比較特殊的設計方式來解決 Callback 帶來的問題，歐萊禮出版的 **_「你所不知道的 JS - 非同步處理與效能 - Kyle Simpson」_** 在第二章節講 Callbacks 有提到解決方案，但邏輯可能過於複雜，導致程式太笨重，增加維護的難度。
+
+<br />
+
+<h4 style={{ fontSize: '1.5rem' }}>
+  <i>—「因此 Promise 誕生了」</i>
+</h4>
+
+<br />
+
+## Promise 使用說明書
+
+![](https://i.imgur.com/7rmen4y.png)
+
+Promise 從執行到結束，一共有三種狀態 :
+
+- **Pending** : 正在執行中，還沒有結果
+- **Fulfilled** : 執行有了結果，你選擇將這個結果當作 **成功** 狀態
+- **Rejected** : 執行有了結果，你選擇將這個結果當作 **失敗** 狀態
+
+<br />
+
+從概念圖我們可以得知，當 Promise 裡面調用了 `resolve` 或者 `reject`，這是一個重大的決定，從這一刻起整個過程就不可以反悔走回頭路，也就是說你的程式已經確定了狀態 ( Settled )。
+
+<br />
+
+生活化例子 :
+
+![](https://i.imgur.com/Kg0PwtD.png)
+
+<br />
+
+### 基本撰寫方式
+
+```javascript showLineNumbers
+new Promise((resolve, reject) => {
+  // 裡面依然是同步執行
+  if (true) resolve('Microtask') // resolve 將發起微任務
+  else reject('Microtask') // reject 將發起微任務
+})
+```
+
+比較要注意的是，Promise 的回調函式中程式碼的執行依然是 **同步函式**，直到遇到 `resolve()` 或者 `reject()`，JavaScript 引擎會發出微任務，將其結果放到微任務佇列等待執行。
+
+思考以下 Promise 執行 console 的結果順序為何 :
+
+```javascript
+const promise = new Promise((resolve, reject) => {
+  console.log(1)
+  resolve(2)
+  reject(3)
+  console.log(4)
+}).then(res => console.log(res))
+// console.log 結果順序 ?
+```
+
+<details>
+  <summary>執行結果</summary>
+  <code>1</code>
+  <br />
+  <code>4</code>
+  <br />
+  <code>2</code>
+</details>
+
+<br />
+
+### 好了 Promise 的基本寫法我會了，then ?
+
+~~就是 then~~
+
+```javascript
+.then(onFulfilled, onRejected)
+```
+
+當我們在 Promise 調用了 `resolve()`，JavaScript 引擎會發起一個**微任務**，這個任務由 `then` 的第一個參數 ( Callback ) 所執行，並且這個 Callback 的參數帶有 `resolve(result)` 的 result 結果。
+
+```javascript showLineNumbers
+let promise = new Promise((resolve, reject) => {
+  resolve(1)
+}).then(res => console.log(res))
+// 1
+```
+
+`then` 的第二個參數也是給定 Callback，但是較少使用，它的作用等同於 `catch`。
+
+```javascript showLineNumbers
+let promise = new Promise((resolve, reject) => {
+  conosle.log(abc)
+}).then(
+  res => console.log(res), // fulfilled
+  // highlight-next-line
+  err => console.log(err) // rejected
+)
+// 因為沒有 abc 變數，所以會印出 abc is not defined 的錯誤訊息
+```
+
+<br />
+
+### `then` 的無限鏈式調用之術
+
+基於 `then` 可以利用 return 返回新的對象，進入到下一個 `then`，所以可以無限調用。
+
+```javascript showLineNumbers
+let promise = new Promise((resolve, reject) => {
+  resolve(1)
+})
+  .then(res => res + 1)
+  .then(res => res + 2)
+  .then(res => console.log(res))
+// ?
+```
+
+<details>
+  <summary>執行結果</summary>
+  <code>4</code>
+</details>
+
+<br />
+
+光是 `then` 的這個特性，就解決了早期 callback function 設計中缺乏順序性的問題，如果一筆資料回來需要經過多筆程序處理，也可以很好的將各個程序拆分在 `then` 中，讓程式碼整體邏輯更清晰。
+
+<br />
+
+### 出錯了 ? 沒關係我來 catch
+
+當我們在 Promise 調用了 `reject()`，JavaScript 引擎同樣會發起一個**微任務**，這個任務由 `catch` 的 callback 函式所執行，並且這個 callback 的參數帶有 `reject(error)` 的 error 結果，或者其他錯誤訊息。
+
+剛剛有提到 `then` 的第二個參數等同於 `catch`，不過實務上比較常使用 `catch` 處理錯誤。
+
+```javascript showLineNumbers
+let promise = new Promise((resolve, reject) => {
+  conosle.log(abc)
+})
+  .then(res => console.log(res)) // fulfilled
+  // highlight-next-line
+  .catch(err => console.log(err)) // rejected
+// 因為沒有 abc 變數，所以會印出 abc is not defined 的錯誤訊息
+```
+
+<br />
+
+### 封裝 Promise
+
+實務上經常將 Promise 封裝在函式中，當我們需要時才會調用它。
+
+```javascript showLineNumbers
+function promise() {
+  return new Promise((resolve, reject) => {
+    // Do something...
+  })
+}
+```
+
+<br />
+
+## Promise 提供的 API
+
+### `Promise.all([iterable])`
+
+透過迭代物件的方式傳入多個 Promise 函式，全部的 Promise 函式執行完畢後才會回傳陣列 ( Array ) 結果，若其中一個 Promise 函式被 reject 或出錯，則 Promise.all 可使用 `catch` 處理失敗。
+
+動態加入 iterator 迭代物件讓 `Promise.all` 執行 :
+
+```javascript showLineNumbers
+const fetch = []
+Object.values(myCats).forEach(cat => {
+  fetch.push(promise(cat))
+})
+
+const iterator = fetch[Symbol.iterator]()
+
+Promise.all(iterator)
+  .then(results => {
+    rets.forEach(result => {
+      console.log(result)
+    })
+  })
+  .catch(err => {
+    console.error(err)
+  })
+```
+
+<br />
+
+### `Promise.race([iterable])`
+
+與 `Promise.all` 使用方法類似，透過迭代物件傳入多個 Promise 函式，當其中有 Promise 函式被 `resolve` 或 `reject` 時，將會被回傳。
+
+<br />
+
+## Promise 在 Event Loop 扮演的角色
+
+上回介紹 JavaScript 在瀏覽器的 [Event Loop](./eventLoop.mdx) 我們知道 Promise.then( ... ) 會進入微任務佇列，需要注意它會在什麼時候被執行。
+
+![](https://i.imgur.com/5NrYsQT.png)
+
+當同步回調在 Call Stack 執行完畢清空時，沒有宏任務或者宏任務被放到 Call Stack 執行完畢清空時，就會輪到 **微任務** 被放進 Call Stack 執行。
+
+<br />
+
+## Promise 小試身手
+
+```javascript showLineNumbers
+// 阻塞函式
+function blockingTest() {
+  const delay = 2000
+  const end = Date.now() + delay
+  console.log('blocking start')
+  while (Date.now() < end) {}
+  console.log('blocking end')
+}
+
+function promise() {
+  console.log(1) // 1
+
+  new Promise((resolve, reject) => {
+    console.log(2) // 2
+    blockingTest() // 同步執行阻塞測試
+    console.log(3) // 3
+    fetch(`https://jsonplaceholder.typicode.com/todos/1`)
+      .then(res => res.json())
+      .then(res => {
+        resolve(res) // 微任務
+        console.log(4) // 4
+      })
+    console.log(5) // 5
+  }).then(res => {
+    console.log(6, res) // 6
+  })
+
+  console.log(7) // 7
+}
+
+promise()
+```
+
+`console.log` 印出的順序為何 ?
+
+<details>
+  <summary>執行結果</summary>
+  <code>1</code>
+  <br />
+  <code>2</code>
+  <br />
+  <code>blocking start</code>
+  <br />
+  <code>blocking end</code>
+  <br />
+  <code>3</code>
+  <br />
+  <code>5</code>
+  <br />
+  <code>7</code>
+  <br />
+  <code>4</code>
+  <br />
+  <code>6, [res]</code>
+  <br />
+</details>
+
+<br />
+
+## Reference
+
+---
+
+- [Promise - MDN](https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+- [JS 原力覺醒 Day14 - 一生懸命的約定：Promise](https://ithelp.ithome.com.tw/articles/10222481)
+- [你懂 JavaScript 嗎？#24 Promise](https://ithelp.ithome.com.tw/articles/10207017)
+- [JavaScript Promise 全介紹](https://www.casper.tw/development/2020/02/16/all-new-promise/)
+- [Promise 誕生的背景](https://juejin.cn/post/7096585537389068302)
+- [[Javascript] ES7 Async Await 聖經](https://peter-chang.medium.com/javascript-es7-async-await-%E6%95%99%E5%AD%B8-703473854f29-tutorial-example-703473854f29)
+- [Day 15 - Asynchronous 非同步進化順序 - Callback 與 Promise](https://ithelp.ithome.com.tw/articles/10275534)
+- [Promise/A+ 規範：誕生與原理初探](https://juejin.cn/post/6850418109414080519)
+- [一个 Promise 面试题](https://juejin.cn/post/6844903605250572302)
