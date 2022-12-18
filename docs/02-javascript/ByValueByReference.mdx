@@ -1,15 +1,17 @@
 ---
+id: javascript-by-value-by-reference
+title: JavaScript - 傳值、傳址、傳共享
 sidebar_label: 傳值、傳址、傳共享
 sidebar_position: 1
+description: Call by value、Call by referece、Call by sharing
+tags: [JavaScript, 傳值, 傳址, 傳共享, 六角學院, JS直播班]
 ---
 
 # 傳值、傳址、傳共享
 
-Call by value、Call by Reference、Call by sharing
-
 ## 開始之前
 
-在學習 JavaScript 路上，免不了要熟悉所謂 **傳值 ( call by value )** 以及 **傳址 ( call by reference )** 的觀念 ~~(當初因為不熟悉這鬼東西放棄 JS 好幾次)~~
+在學習 JavaScript 路上，免不了要熟悉所謂 **傳值 ( call by value )** 以及 **傳址 ( call by reference )** 的觀念 ~~(當初因為不熟悉這鬼東西放棄 JS 好幾次)~~。
 
 先感謝 **六角學院** 讓我透過直播班有機會探討這個主題，寫下第一篇公開的技術筆記。
 
@@ -21,7 +23,7 @@ Call by value、Call by Reference、Call by sharing
 
 先讓我們暖身一下 :
 
-```javascript showLineNumbers
+```javascript {3} showLineNumbers
 let a = 10
 a += 1
 console.log(a) // ?
@@ -76,7 +78,7 @@ console.log(a) // ?
 
 **暖身完畢，緊接著我們來延伸上一個例子 :**
 
-```javascript showLineNumbers
+```javascript {3} showLineNumbers
 let a = 10
 let b = a
 console.log(b) // 10
@@ -85,7 +87,7 @@ console.log(b) // 10
 這個例子我們可以很直觀講出 console 印出來的結果是 10，因為 b 等於 a 嘛 !
 那我們來多加一行程式碼，將 a 重新賦值看看 :
 
-```javascript showLineNumbers
+```javascript {4} showLineNumbers
 let a = 10
 let b = a
 a = 20
@@ -168,6 +170,7 @@ b = 'B'
 c = 'C'
 a += b
 a += c
+// highlight-next-line
 console.log(a, b, c) // ?
 ```
 
@@ -306,6 +309,7 @@ let person2 = person1
 
 person1.name = 'Ray'
 
+// highlight-next-line
 console.log(person2.name) // ?
 ```
 
@@ -407,6 +411,7 @@ let person2 = person1
 
 person1 = { name: 'Ray' }
 
+// highlight-next-line
 console.log(person2.name) // ?
 ```
 
@@ -477,6 +482,7 @@ console.log(person2.name) // ?
 ```javascript showLineNumbers
 function add(a, b) {
   a += b
+  // highlight-next-line
   console.log(a) // 30
 }
 let x = 10
@@ -557,6 +563,7 @@ function updateObj(insideObj) {
 let outsideObj = { name: 'Tim' }
 updateObj(outsideObj)
 
+// highlight-next-line
 console.log(outsideObj) // ?
 ```
 
@@ -618,14 +625,17 @@ console.log(outsideObj) // ?
 ```javascript showLineNumbers
 function updateObj(insideObj) {
   insideObj = { name: 'Ray' }
+  // highlight-next-line
   console.log('insideObj: ', insideObj) // ?
 }
 
 let outsideObj = { name: 'Tim' }
 updateObj(outsideObj)
 
+// highlight-start
 console.log('outsideObj: ', outsideObj) // ?
 console.log('insideObj: ', insideObj) // ?
+// highlight-end
 ```
 
 <details>
@@ -722,5 +732,3 @@ import HighlightBlock from '@site/src/components/highlight/HighlightBlock'
 - [JavaScript’s Memory Model - Ethan Nam](https://medium.com/@ethannam/javascripts-memory-model-7c972cd2c239)
 
 <br />
-
-###### tags: `JavaScript` `六角學院` `JS直播班`

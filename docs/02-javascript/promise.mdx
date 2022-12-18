@@ -1,0 +1,107 @@
+---
+id: javascript-promise
+title: JavaScript - Promise
+sidebar_label: Promise
+sidebar_position: 4
+tags: [JavaScript, Promise, 下班後的程式讀書會]
+---
+
+# JavaScript - Promise
+
+![](https://i.imgur.com/ptu84aa.jpg)
+
+## 故事是這樣的 ...
+
+在古老的 ES5 時代，農夫每天辛勤工作，但是辛苦種下的程式碼卻每天遭受蟲子的侵襲，一名身處在那個時代的農夫曾說 ... _「我宛如身在十八層 Callback Hell」_。
+
+農夫們痛苦不堪，不過為了生活，只能咬著牙使用一個叫 console.log 這個笨重的工具每天到田裡除蟲，但是蟲子就好像無性生殖的生物一樣，消滅一個，來了兩個，直到某天 ...
+
+**_「痛苦終將過去」_**，突如其來的聲音四面環繞，就像杜比 9.1 聲道一樣。
+
+一位名為**普羅米修斯**的人遠道而來，身著奇異服裝，手裡拿著農夫們不曾見過的工具。普羅米修斯聲稱他來至於名為 ES6 的天國，擁有先見之明的他，被指派降臨凡間拯救世人免於遭受蟲害侵擾。
+
+普羅米修斯拿著工具手一揮，_「嘩 !」_，一大群蟲子落地沒有了生命跡象，農夫們紛紛拍手叫好，感動得痛哭流涕。此時普羅米修斯將手上的工具交給一位農夫，跟他說 _「工欲善其事，必先利其器。這個工具叫做 Promise，你要好好使用他，並且傳承下去」_。農夫允諾後，普羅米修斯瞬間化為塵煙，消失的無影無縱，記錄這一切的農夫稱這之後的時代為 ES6。
+
+時光飛逝，普羅米修斯的出現也讓時代快速進步，當初被授予 Promise 的農夫也兌現傳承的諾言，直到現今 ES7 時代，每位農夫人手一把 Promise 改良後的工具，名為 Async/Await，他們相信這是普羅米修斯的化身，誓言善用它並結合自身的力量，絕對不讓十八層 Callback Hell 重回人間 ...
+
+<br />
+
+~~( 以上是幹話 )~~
+
+<br />
+
+### JavaScript ES5、ES6、ES7 非同步演進示意圖 :
+
+![非同步演進](https://i.imgur.com/LYfLM3V.png)
+
+<br />
+
+### Callback Hell 示意圖
+
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+
+<Tabs>
+  <TabItem
+    value='img'
+    label="示意圖"
+  >
+
+![Callback Hell](https://i.imgur.com/BUfRkW0.png)
+
+  </TabItem>
+  <TabItem
+    value="js"
+    label="JavaScript"
+  >
+
+```js showLineNumbers
+const Satan = () => {
+  setTimeout(() => {
+    console.log('去去 bug 走')
+    setTimeout(() => {
+      console.log('去去 bug 走...')
+      setTimeout(() => {
+        console.log('去去 bug 走 !!!')
+        setTimeout(() => {
+          console.log('去去 bug 走 (／‵Д′)／~ ╧╧')
+          setTimeout(() => {
+            console.log('去去 bug 走 (╬ﾟдﾟ)▄︻┻┳═一')
+            setTimeout(() => {
+              console.log('去去 bug 走 ▆▅▃ 崩╰(〒皿〒)╯潰 ▃▅▇')
+              setTimeout(() => {
+                console.log('去世')
+              }, 3500)
+            }, 3000)
+          }, 2500)
+        }, 2000)
+      }, 1500)
+    }, 1000)
+  }, 500)
+}
+```
+
+  </TabItem>
+</Tabs>
+
+<details>
+  <summary>
+    <i>Codewars 的一位勇者為了磨練自己，親身體驗地獄</i>
+  </summary>
+  <img
+    src="https://i.imgur.com/KYm2GJm.png"
+    alt=""
+  />
+  <s>很明顯這位勇者最後瘋掉了</s>
+</details>
+
+<br />
+
+## 所以在 ES5 時代為什麼會有 Callback Hell ?
+
+從上面那張 `setTimeout` 的地獄圖我們可以知道，當我們需要執行非同步函式，並且要在非同步任務完成後接著做某件事，需要調用當初在函式中傳入的參數，我們稱這種函式為 Callback Function。
+
+```javascript showLineNumbers
+const print = () => console.log(`I'm Callback`)
+setTimeout(print, 0) // Callback Function
+```

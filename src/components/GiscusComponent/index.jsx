@@ -11,7 +11,7 @@ export default function GiscusComponent({
   const { colorMode } = useColorMode()
 
   return (
-    <div style={{ paddingTop: '2rem' }}>
+    <div style={{ paddingTop: '3rem' }}>
       <Giscus
         repo={repo}
         repoId={repoId}

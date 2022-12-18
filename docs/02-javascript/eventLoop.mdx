@@ -1,0 +1,211 @@
+---
+id: javascript-event-loop
+title: JavaScript - Event Loop
+sidebar_label: Event Loop
+sidebar_position: 3
+tags: [JavaScript, Event Loop, 下班後的程式讀書會]
+---
+
+# JavaScript - Event Loop
+
+## 開始之前
+
+- JavaScript 引擎是 **單執行緒 ( Single Thread )**，也就是 **一次只做一件事 / 一次只執行一段程式碼**。
+- 瀏覽器不只有 JS 引擎，也就是整個瀏覽器並不是只由 JS 引擎組成，而一個分頁 ( Tab ) 僅存在一個 JS 引擎運行 JS 程式。()
+- 瀏覽器是屬於多程式多執行緒，因此可以在瀏覽器中做出非同步行為。
+- **Event Loop** 顧名思義，就是一個 Loop ( 循環 )，會持續檢查執行堆疊 ( Call Stack ) 有沒有 Callback 可以呼叫。
+
+<img
+  src="https://i.imgur.com/nK5YMrJ.png"
+  alt="瀏覽器核心組成示意圖"
+/>
+
+<small>瀏覽器核心組成示意圖</small>
+
+<br />
+
+## JavaScript Runtime ( JavaScript 執行環境 )
+
+### V8 Engine
+
+![Runtime](https://i.imgur.com/1HnU407.png)
+
+Stack 是一個先進後出 ( First In Last Out ) 的運作模式，當程式呼叫函式 ( Call function ) 時會把函式放進 Stack 中，直到函式執行結束 return 後再將函式從 Stack 中取出 ( 清空 )。
+
+範例 :
+
+```javascript showLineNumbers
+const bar = () => console.log('bar')
+const baz = () => console.log('baz')
+const foo = () => {
+  console.log('foo')
+  bar()
+  baz()
+}
+
+foo()
+```
+
+以上的程式碼執行後在 Call Stack 是這樣運作的 :
+
+<img
+  src="https://i.imgur.com/iHLRKT9.png"
+  alt=""
+/>
+<small>(來源 : https://jimmyswebnote.com/javascript-sync-async/)</small>
+
+<br />
+<br />
+
+以瀏覽器來說，之所以能夠同時做事的原因是，瀏覽器不只有 Runtime 而已。
+
+### Web APIs
+
+![](https://i.imgur.com/Gx29DNx.png)
+
+Web API 範例 :
+
+```javascript showLineNumbers
+console.log('Sync 1')
+
+setTimeout(function asyncTimer() {
+  console.log(`Hey, I'm done.`)
+}, 0)
+
+console.log('Sync 2')
+```
+
+<details>
+  <summary>執行結果</summary>
+  <code>Sync 1</code>
+  <br />
+  <code>Sync 2</code>
+  <br />
+  <code>Hey, I'm done.</code>
+</details>
+
+<br />
+
+## Blocking 阻塞
+
+#### 執行堆疊 ( Call Stack ) 清空時，瀏覽器會做兩件事情 :
+
+1. 若 **Macrotask Queue ( 宏任務佇列 )** 或 **Microtask Queue ( 微任務佇列 )** 有任務存在，會讀取其任務 ( 也就是 **Event Loop** ) 在 **Call Stack** 上執行完畢並清除。
+2. Render ( 渲染畫面 )，瀏覽器理想上會進行最快速的重繪頻率 ( 顯示器更新頻率 ) 。
+
+:::info
+**當 Call Stack 還沒有清空之前，瀏覽器是不會重新渲染畫面**，
+因此若 Call Stack 上的 Callback 函式執行過久，就會產生所謂的 **阻塞**。
+:::
+
+瀏覽器上模擬阻塞 :
+
+```javascript showLineNumbers
+const delay = 5000
+const end = Date.now() + delay
+console.log('blocking start')
+while (Date.now() < end) {}
+console.log('blocking end')
+```
+
+<br />
+
+## Event Loop
+
+![](https://i.imgur.com/CK98bbH.png)
+
+### 宏任務 Macrotask
+
+包含的方法 :
+
+1. 前面提到的 Web APIs
+2. I/O ( 讀寫、存取 )
+3. 載入 JS 檔案並且執行時，例如 `<script>`
+4. 渲染畫面 ( Render )
+
+<br />
+
+### 微任務 Microtask
+
+包含的方法 :
+
+- Promise
+- MutationObserver ( 監聽 DOM tree 變動的 API )
+- Process.nextTick ( 屬於 Node.js 的 Event Loop )
+
+:::tip
+注意這邊的微任務 ( Microtask )，指的是 **已經回應後的結果**，而且正等待執行中。
+例如 : Promise 進行的 Ajax 請求已經確認執行完畢 ( Settled )，此時 .then( ... ) 或 .catch( ... ) 將會進入微任務佇列 ( Microtask Queue )，等待執行。
+:::
+
+每當 **宏任務** 執行完畢時，會檢查有無 **微任務** ，若有則執行微任務，當所有微任務執行完畢，就會進行一次畫面渲染 ( Render Task )，**渲染 ( Render )** 的動作本身也是一個 **宏任務**。
+
+![](https://i.imgur.com/5NrYsQT.png)
+
+範例 :
+
+```javascript showLineNumbers
+setTimeout(() => console.log('Timer'))
+
+Promise.resolve().then(() => console.log('Promise'))
+
+console.log('Sync Console')
+```
+
+<details>
+  <summary>執行結果</summary>
+  <code>Sync Console</code>
+  <br />
+  <code>Promise</code>
+  <br />
+  <code>Timer</code>
+</details>
+
+<br />
+
+:::success
+當頁面載入，或者在 devtools console 執行，都相當於執行 `<script>`，而執行`<script>`就等於執行一個 **宏任務 ( Macrotask )**
+:::
+
+<br />
+
+### 當微任務執行完畢後，才會渲染畫面
+
+整理上述，渲染畫面有幾個時機 :
+
+1. 當 Call Stack 的 Callback 執行完畢被清空時。
+2. 當宏任務 ( Macrotask ) 在 Call Stack 執行完畢被清空，且沒有微任務 ( Mircotask ) 時。
+3. 若有微任務 ( Microtask )，當微任務在 Call Stack 執行完畢時被清空時。
+
+<br />
+
+## 前端面試遇到面試官提問 Event Loop 是什麼該如何回答 ?
+
+JavaScript 引擎是單執行緒，也就是同一時間、一次只做一件事，但瀏覽器中不只有
+JavaScript 引擎，還有 Web APIs、GUI、Plugin 等處理程序提供我們非同步操作。
+
+當非同步操作有執行的結果，會被放到 Event Queue，等待 JS 引擎中 Call Stack
+同步函式執行完畢後，被放進 Call Stack 接續執行。這種監控 Event Queue
+並且將任務放進 Call Stack 執行的行為，就是瀏覽器協調事件的機制 Event Loop。
+
+<br />
+
+## Reference
+
+---
+
+- [MDN - The event loop](https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/EventLoop)
+- [MDN - In depth: Microtasks and the JavaScript runtime environment](https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide/In_depth)
+- [Loupe](http://latentflip.com/loupe/)
+- [Youtube - 所以說 event loop 到底是什麼玩意兒？| Philip Roberts | JSConf EU](https://www.youtube.com/watch?v=8aGhZQkoFbQ)
+- [JavaScript Visualizer 9000](https://www.jsv9000.app/)
+- [JS 原力覺醒 Day13 - Event Queue & Event Loop 、Event Table](https://ithelp.ithome.com.tw/articles/10221944)
+- [JS 原力覺醒 Day14 - 一生懸命的約定：Promise](https://ithelp.ithome.com.tw/articles/10222481)
+- [JS 原力覺醒 Day15 - Macrotask 與 MicroTask](https://ithelp.ithome.com.tw/articles/10222737)
+- [【JavaScript 筆記】所以事件循環 Event Loop 到底是什麼？](https://emilywalkdone.blogspot.com/2021/01/JavaScript-EVENT-LOOP.html)
+- [[JavaScript] Javascript 的事件循環 (Event Loop)、事件佇列 (Event Queue)、事件堆疊 (Call Stack)：排隊](https://medium.com/itsems-frontend/javascript-event-loop-event-queue-call-stack-74a02fed5625)
+- [JavaScript 中的同步與非同步（上）：先成為 callback 大師吧！](https://blog.huli.tw/2019/10/04/javascript-async-sync-and-callback/)
+- [重學瀏覽器(1) - 多程式多執行緒的瀏覽器](https://iter01.com/429161.html)
+- [从浏览器多进程到 JS 单线程，JS 运行机制最全面的一次梳理](https://segmentfault.com/a/1190000012925872)
+- [[Javascript] 深入了解事件迴圈(Event Loop)，Macrotask 跟 Microtask 是什麼？](https://gcdeng.medium.com/javascript-%E6%B7%B1%E5%85%A5%E4%BA%86%E8%A7%A3%E4%BA%8B%E4%BB%B6%E8%BF%B4%E5%9C%88-event-loop-macrotask%E8%B7%9Fmicrotask%E6%98%AF%E4%BB%80%E9%BA%BC-21a7c4642cda)
+- [Youtube - JavaScript 宏任务与微任务 - Web 前端工程师面试题讲解](https://youtu.be/PsNkRVzppIs)

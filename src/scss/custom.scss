@@ -37,6 +37,10 @@
 //   display: none;
 // }
 
+img[class^='img_node_modules'] {
+  border-radius: 0.375em;
+}
+
 @import './custom-main';
 @import './custom-sidebar';
 @import './custom-navbar';

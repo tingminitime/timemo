@@ -48,6 +48,8 @@ const config = {
           // Remove this to remove the "edit this page" links.
           editUrl: `https://github.com/${organizationName}/${projectName}/tree/main/`,
           // docItemComponent: '@site/src/theme/CustomComponents/DocItem.tsx',
+          showLastUpdateTime: true,
+          showLastUpdateAuthor: true,
         },
         blog: {
           showReadingTime: true,
@@ -70,6 +72,12 @@ const config = {
       colorMode: {
         respectPrefersColorScheme: true,
       },
+      metadata: [
+        {
+          name: 'og:image',
+          content: require.resolve('./static/img/og-img.png'),
+        },
+      ],
       navbar: {
         title: 'TIMemo',
         hideOnScroll: false,
