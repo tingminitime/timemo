@@ -14,6 +14,7 @@ import styles from './styles.module.css'
 
 import GiscusComponent from '@site/src/components/GiscusComponent'
 import useIsBrowser from '@docusaurus/useIsBrowser'
+
 /**
  * Decide if the toc should be rendered, on mobile or desktop viewports
  */
@@ -35,11 +36,13 @@ function useDocTOC() {
 }
 export default function DocItemLayout({ children }) {
   const docTOC = useDocTOC()
-
   const isBrowser = useIsBrowser()
-  let isCurrentUrlBlog = false
+  const { frontMatter } = useDoc()
+  const { disable_giscus: disableGiscus } = frontMatter
+
+  let isCurrentUrlDoc = false
   if (isBrowser) {
-    isCurrentUrlBlog = window.location.pathname === '/docs'
+    isCurrentUrlDoc = window.location.pathname === '/docs'
   }
   return (
     <div className="row">
@@ -53,17 +56,16 @@ export default function DocItemLayout({ children }) {
             <DocItemContent>{children}</DocItemContent>
             <DocItemFooter />
           </article>
+          {!isCurrentUrlDoc && !disableGiscus && (
+            <GiscusComponent
+              repo="tingminitime/timemo-giscus-doc"
+              repoId="R_kgDOIolpeg"
+              category="Announcements"
+              categoryId="DIC_kwDOIolpes4CTH_i"
+            ></GiscusComponent>
+          )}
           <DocItemPaginator />
         </div>
-
-        {!isCurrentUrlBlog && (
-          <GiscusComponent
-            repo="tingminitime/timemo-giscus-doc"
-            repoId="R_kgDOIolpeg"
-            category="Announcements"
-            categoryId="DIC_kwDOIolpes4CTH_i"
-          ></GiscusComponent>
-        )}
       </div>
       {docTOC.desktop && <div className="col col--3">{docTOC.desktop}</div>}
     </div>

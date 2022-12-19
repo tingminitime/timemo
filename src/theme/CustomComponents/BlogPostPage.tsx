@@ -39,7 +39,15 @@ function BlogPostPageContent({
     hide_table_of_contents: hideTableOfContents,
     toc_min_heading_level: tocMinHeadingLevel,
     toc_max_heading_level: tocMaxHeadingLevel,
+    disable_giscus: disableGiscus,
   } = frontMatter
+
+  const isBrowser = useIsBrowser()
+  let isCurrentUrlBlog = false
+  if (isBrowser) {
+    isCurrentUrlBlog = window.location.pathname === '/blog'
+  }
+
   return (
     <BlogLayout
       sidebar={sidebar}
@@ -55,6 +63,15 @@ function BlogPostPageContent({
     >
       <BlogPostItem>{children}</BlogPostItem>
 
+      {!isCurrentUrlBlog && !disableGiscus && (
+        <GiscusComponent
+          repo="tingminitime/timemo-giscus-blog"
+          repoId="R_kgDOIolnrQ"
+          category="Announcements"
+          categoryId="DIC_kwDOIolnrc4CTH_u"
+        ></GiscusComponent>
+      )}
+
       {(nextItem || prevItem) && (
         <BlogPostPaginator
           nextItem={nextItem}
@@ -67,11 +84,6 @@ function BlogPostPageContent({
 
 export default function BlogPostPage(props: Props): JSX.Element {
   const BlogPostContent = props.content
-  const isBrowser = useIsBrowser()
-  let isCurrentUrlBlog = false
-  if (isBrowser) {
-    isCurrentUrlBlog = window.location.pathname === '/blog'
-  }
   return (
     <BlogPostProvider
       content={props.content}
@@ -86,15 +98,6 @@ export default function BlogPostPage(props: Props): JSX.Element {
         <BlogPostPageMetadata />
         <BlogPostPageContent sidebar={props.sidebar}>
           <BlogPostContent />
-
-          {!isCurrentUrlBlog && (
-            <GiscusComponent
-              repo="tingminitime/timemo-giscus-blog"
-              repoId="R_kgDOIolnrQ"
-              category="Announcements"
-              categoryId="DIC_kwDOIolnrc4CTH_u"
-            ></GiscusComponent>
-          )}
         </BlogPostPageContent>
       </HtmlClassNameProvider>
     </BlogPostProvider>
