@@ -15,6 +15,4 @@ Be open to it and accept it with a smile. Look at each change to your requiremen
 
 敞開心扉、坦然地接受變化。將需求、流程或技術每一次產生變化時，視為新的挑戰，而不是無可奈何的麻煩事。
 
-敞開心扉、坦然地接受變化。將需求、流程或技術每一次產生變化時，視為新的挑戰，而不是無可奈何的麻煩事。
-
 _— 「Egoless Programming」_

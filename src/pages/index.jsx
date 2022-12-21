@@ -24,15 +24,6 @@ function HomepageHeader() {
           <span>前往筆記 </span>
           <span className="material-symbols-outlined">&#xe941;</span>
         </Link>
-
-        {/* <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/intro"
-          >
-            Docusaurus Tutorial - 5min ⏱️
-          </Link>
-        </div> */}
       </div>
     </header>
   )
@@ -43,7 +34,7 @@ export default function Home() {
   return (
     <Layout
       title={`${siteConfig.title} 前端筆記`}
-      description="Description will go into a meta tag in <head />"
+      description="Tim's Dev Notes，記錄在前端學習路上的足跡。"
     >
       <HomepageHeader />
       <main>
