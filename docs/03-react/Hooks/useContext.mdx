@@ -1,0 +1,383 @@
+---
+id: react-context
+title: React - useContext
+sidebar_label: useContext
+sidebar_position: 3
+tags: [JavaScript, React, hooks, useContext]
+---
+
+# useContext
+
+## Context 是什麼 ?
+
+Context 是 React 的一個功能，它可以在前端的樹狀元件結構中的任意深度傳遞數據，而無需手動從父組件傳遞 props 到子組件。使用 Context 可以更方便地在程式中管理全域資料，例如語言設置、主題、用戶資料等。
+
+如上所述，在一個 React App 中，元件可能不只有父子層 ( Parent and Child )，祖孫層或祖宗十八代層都有可能。
+
+<img
+  src="https://i.imgur.com/5gIf8NM.png"
+  alt=""
+  style={{ maxWidth: '350px', width: '100%' }}
+/>
+
+如上圖，當第四層的 Data 需要第一層的 Data，使用 props 傳遞需要經過兩層元件，最終才能到達需要 Data 的第四層。
+
+如果只是少數幾層傳遞 props 那是 OK 的，而且使用 props 傳遞資料的好處是好追蹤資料源頭，但如果元件架構像下圖這樣呢 ?
+
+![](https://i.imgur.com/cb3snAH.png)
+
+底下有不同層級的元件需要第一層的 Data，因此使用 props 傳很多層才能到達目標元件，有個名詞可以形容他，叫做 "**Prop drilling**"，簡單來說就是要個資料還要問候祖宗十八代。
+
+這種複雜~~(問候祖宗)~~資料傳遞的方式不僅寫起來麻煩，也會徒增維護的難度，Context 就是用來解決 Prop drilling 帶來的困境。
+
+<br />
+
+## 使用 Context 的三個必要步驟
+
+1. 建立一個 Context。 ( `createContext` )
+2. 找到資料源頭的元件，提供 Context 和資料。 ( `Context.Provider` )
+3. 在目標元件裡面使用 Context 的資料。 ( `useContext` )
+
+![](https://i.imgur.com/VUfTRCn.png)
+概念如上圖，接下來我們依照這三個步驟，一步一步介紹實際的作法。
+
+<br />
+
+## 實作 Context
+
+假設元件架構如下 :
+
+```jsx showLineNumbers
+// 第一層 (user 資料在這層)
+function App() {
+  // highlight-next-line
+  const [user, setUser] = useState({ name: 'Tim' })
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <p style={{ textAlign: 'center' }}>App</p>
+        <p>
+          User: <span style={{ color: 'navy' }}>{user.name}</span>
+        </p>
+      </div>
+      <MainPage user={user}></MainPage>
+    </>
+  )
+}
+
+// 第二層
+function MainPage({ user }) {
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>Main Page</p>
+      <Content user={user}></Content>
+    </div>
+  )
+}
+
+// 第三層
+function Content({ user }) {
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>Content</p>
+      <Message user={user}></Message>
+    </div>
+  )
+}
+
+// 第四層 (這層需要第一層的資料 user)
+function Message({ user }) {
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>
+        {/* highlight-next-line */}
+        Hello, <span style={{ color: 'navy' }}>{user.name}</span> (´• ω •`)ﾉ
+      </p>
+    </div>
+  )
+}
+```
+
+`Message` 元件為了取得 `App` 元件的 `user` 資料，將資料用 prop 向下傳遞經過 `MainPage` 和 `Content` 兩個不需要 `user` 資料的元件，讓我們使用 Context 三個步驟來讓 `user` 資料跨元件傳遞。
+
+<br />
+
+### Step 1 : 建立一個 Context
+
+#### `createContext` 基本語法
+
+```jsx showLineNumbers
+const Context = createContext(defaultValue)
+```
+
+使用 `createContext` 在元件外面建立一個 context object，而 `defaultValue` 不一定需要，有的話可以給這個 Context 預設值，如果 Provider 沒有給 `value`，那麼拿取 Context 資料的元件將會拿到這個預設值。
+
+了解 `createContext` 後，我們在上面範例的元件外建立 `UserContext` :
+
+```jsx {2} showLineNumbers
+// 在元件外建立 Context
+const UserContext = createContext()
+
+// 第一層 (user 資料在這層)
+function App() {
+  // ...
+}
+
+// 第二層
+function MainPage({ user }) {
+  // ...
+}
+
+// 第三層
+function Content({ user }) {
+  // ...
+}
+
+// 第四層 (這層需要第一層的資料 user)
+function Message({ user }) {
+  // ...
+}
+```
+
+<br />
+
+### Step2 : 找到資料源頭的元件，提供 Context 和資料
+
+```jsx showLineNumbers
+const UserContext = createContext()
+
+// 第一層 (user 資料在這層)
+function App() {
+  const [user, setUser] = useState({ name: 'Tim' })
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <p style={{ textAlign: 'center' }}>App</p>
+        <p>
+          User: <span style={{ color: 'navy' }}>{user.name}</span>
+        </p>
+      </div>
+      {/* highlight-start */}
+      <UserContext.Provider value={user}>
+        <MainPage></MainPage>
+      </UserContext.Provider>
+      {/* highlight-end */}
+    </>
+  )
+}
+
+// ...
+```
+
+因為 `user` 資料在 `App` 元件裡面，因此我們將 Provider 定位在這邊，使用 `UserContext.Provider` 包住 `MainPage` 元件，Provider 的 `value` 類似 props，讓 Provider 裡面所有元件都能取得到 `value` 資料，這邊就在 `value` 給予 `user` 資料。
+
+<br />
+
+### Step3 : 在目標元件裡面使用 Context 的資料
+
+```jsx showLineNumbers
+// 第一層 (user 資料在這層)
+function App() {
+  const [user, setUser] = useState({ name: 'Tim' })
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <p style={{ textAlign: 'center' }}>App</p>
+        <p>
+          User: <span style={{ color: 'navy' }}>{user.name}</span>
+        </p>
+      </div>
+      <UserContext.Provider value={user}>
+        <MainPage></MainPage>
+      </UserContext.Provider>
+    </>
+  )
+}
+
+// 第二層
+function MainPage() {
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>Main Page</p>
+      <Content></Content>
+    </div>
+  )
+}
+
+// 第三層
+function Content() {
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>Content</p>
+      <Message></Message>
+    </div>
+  )
+}
+
+// 第四層 (這層需要第一層的資料 user)
+function Message() {
+  // highlight-next-line
+  const user = useContext(UserContext) // 取得 UserContext 的資料
+
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>
+        {/* highlight-next-line */}
+        Hello, <span style={{ color: 'navy' }}>{user.name}</span> (´• ω •`)ﾉ
+      </p>
+    </div>
+  )
+}
+```
+
+`MainPage`、`Content`、`Message` 這三個元件不再需要使用 props 傳遞 `user` 資料，因此我們將 props 移除，然後在 Message 裡面使用 `useContext(UserContext)`，它會回傳我們需要的 `user` 資料，這樣就大功告成了 !
+
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-1-t81n9u?file=/src/App.js)
+
+<iframe
+  src="https://codesandbox.io/embed/usecontext-simple-1-t81n9u?fontsize=14&hidenavigation=1&theme=dark"
+  style={{
+    width: '100%',
+    height: '500px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="useContext-simple-1"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
+
+<br />
+
+## 將 Context 封裝
+
+相同的 Context 可能會有不同元件也需要使用，因此 Context 通常會封裝到外部，在需要的元件裡面 `import` 使用，讓我們在使用上更加方便 !
+
+延續上面的範例，先建立 `contexts` 資料夾，在裡面建立一個 `UserContext.js`
+
+```jsx showLineNumbers title="/src/contexts/UserContext.js"
+const UserContext = createContext()
+```
+
+眼尖的會注意到我沒有 `export` 這個 `UserContext`，因為我們可以在這個 `UserContext.js` 裡面把 Provider 封裝好，甚至也將 `useContext` 一起封裝，再 `export`，這樣在需要使用 Context 的元件僅需要將封裝好的 `useContext` 一起 `import` 就可以使用囉 !
+
+```jsx showLineNumbers title="/src/contexts/UserContext.js"
+const UserContext = createContext()
+
+// 封裝好的 Provider
+export function UserProvider({ children, user }) {
+  return <UserContext.Provider value={user}>{children}</UserContext.Provider>
+}
+
+// 封裝好的 useContext
+export function useUser() {
+  return useContext(UserContext)
+}
+```
+
+`UserProvider` 也別忘記需要將 `user` 以 props 的方式傳遞給 Provider 的 `value`。
+
+在原本的元件 `import` 這兩個方法使用 :
+
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+
+<Tabs>
+<TabItem value="app" label="App.js">
+
+```jsx showLineNumbers
+import { useState } from 'react'
+import { UserProvider, useUser } from './contexts/UserContext'
+
+// 第一層 (user 資料在這層)
+function App() {
+  const [user, setUser] = useState({ name: 'Tim' })
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <p style={{ textAlign: 'center' }}>App</p>
+        <p>
+          User: <span style={{ color: 'navy' }}>{user.name}</span>
+        </p>
+      </div>
+      <UserProvider user={user}>
+        <MainPage></MainPage>
+      </UserProvider>
+    </>
+  )
+}
+
+// 第二層
+function MainPage() {
+  // ...
+}
+
+// 第三層
+function Content() {
+  // ...
+}
+
+// 第四層 (這層需要第一層的資料 user)
+function Message() {
+  const user = useUser() // 使用封裝好的 custom hook
+
+  return (
+    <div style={{ border: '1px solid red', padding: '1rem' }}>
+      <p style={{ textAlign: 'center' }}>
+        Hello, <span style={{ color: 'navy' }}>{user.name}</span> (´• ω •`)ﾉ
+      </p>
+    </div>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="context" label="UserContext.js">
+
+```jsx showLineNumbers
+// ./src/contexts/UserContext.js
+import { createContext, useContext } from 'react'
+
+const UserContext = createContext()
+
+// 封裝好的 Provider
+export function UserProvider({ children, user }) {
+  return <UserContext.Provider value={user}>{children}</UserContext.Provider>
+}
+
+// 封裝好的 useContext
+export function useUser() {
+  return useContext(UserContext)
+}
+```
+
+</TabItem>
+</Tabs>
+
+這樣就大功告成囉 !
+
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-2-vj4ecv?file=/src/App.js)
+
+<iframe
+  src="https://codesandbox.io/embed/usecontext-simple-2-vj4ecv?fontsize=14&hidenavigation=1&theme=dark"
+  style={{
+    width: '100%',
+    height: '500px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="useContext-simple-2"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
+
+<br />
+<br />
+
+希望這個筆記對大家有幫助，如果有錯誤或不夠清楚的地方也歡迎在底下留言讓我改進 (-ω-ゞ

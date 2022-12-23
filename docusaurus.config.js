@@ -35,7 +35,7 @@ const config = {
     'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200',
   ],
 
-  plugins: ['docusaurus-plugin-sass'],
+  plugins: ['docusaurus-plugin-sass', '@docusaurus/theme-live-codeblock'],
 
   presets: [
     [
@@ -178,6 +178,9 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+      },
+      liveCodeBlock: {
+        playgroundPosition: 'bottom',
       },
     }),
 }
