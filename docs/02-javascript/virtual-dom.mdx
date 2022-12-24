@@ -1,0 +1,882 @@
+---
+id: javascript-virtual-dom
+title: JavaScript - Virtual DOM
+sidebar_label: Virtual DOM - 框架基礎探索
+sidebar_position: 5
+tags: [JavaScript, Virtual DOM, 下班後的程式讀書會]
+---
+
+# Virtual DOM | 框架基礎探索
+
+> 此筆記非原創，大部分內容參考 Leo Chiu 文章 [Virtual DOM | 為了瞭解原理，那就來實作一個簡易 Virtual DOM 吧！](https://medium.com/%E6%89%8B%E5%AF%AB%E7%AD%86%E8%A8%98/build-a-simple-virtual-dom-5cf12ccf379f) 撰寫。
+
+> 此筆記於 2022/01/05 撰寫。
+
+## 為什麼要理解 Virtual DOM ?
+
+1. 操作 Virtual DOM 及直接對 DOM 操作的優缺點。
+2. 更了解 Vue、React 等框架如何利用 Virtual DOM 達到效能優化。
+3. 更了解 MVVM 架構中 ViewModel 的核心原理，知道資料改變是如何觸發畫面改變的。
+4. 幫助了解框架進行 Virtual DOM 比對原理，在框架中撰寫程式時，手感會更扎實。
+
+<br />
+
+## Virtual DOM 概念
+
+**Virtual DOM** 是以 JavaScript 物件模擬特定 DOM Tree，不直接操作真實 DOM，而是使用操作模擬 DOM Tree，等待操作結束後，再將變更更新回真實 DOM 上，達到效能優化目的。
+
+![](https://i.imgur.com/IglDq2I.png)
+( 圖片來源 : https://medium.com/手寫筆記/build-a-simple-virtual-dom-5cf12ccf379f )
+
+:::info
+利用 Virtual DOM 的操作，可以達到僅更新有修改變動的 DOM 優化渲染效能，不會整個 DOM Tree 都重新渲染。
+:::
+
+<br />
+
+### JS 模擬 Virtual DOM 物件 :
+
+```jsx showLineNumbers
+const vNode = {
+  tagName: 'div',
+  attrs: {
+    class: 'container',
+    style: 'display: flex;'
+  },
+  children: [
+    tagName: 'a',
+    attrs: {
+      href: 'https://www.google.com',
+      class: 'link',
+      style: 'text-decoration: none;'
+    },
+    children: [...],
+  ],
+}
+```
+
+以往我們使用 `innerHTML` 來操作更新畫面，因為簡單暴力 (?)。
+
+但 `innerHTML` 有很多潛在的問題，例如 :
+
+1. 選定的 DOM 使用 `innerHTML`，DOM 的所有子元素通通會重新渲染一遍，造成瀏覽器效能負擔。
+2. `innerHTML` 潛藏 XSS 攻擊風險。
+3. 一不小心還會用迴圈多次渲染 DOM Tree，造成沒必要的效能浪費。
+
+<br />
+
+## 所以使用 Virtual DOM 都沒有缺點 ?
+
+程式選擇議題通常是一體兩面，有好有壞，選擇了一個方式通常會伴隨優勢和缺點。
+
+Virtual DOM 是依靠記憶體空間存放物件，因此操作 Virtual DOM 也會提高網頁記憶體的使用量，另外 Virtual DOM 的寫法通常也比較複雜不像單純操作 DOM 來的方便直覺。
+
+<br />
+
+## 操作 DOM 的方式
+
+### 1. `document.createElement(tagName)`
+
+可以產生指定標籤名稱的 HTML 元素。
+
+```jsx showLineNumbers
+let div = document.createElement('div') // <div></div>
+```
+
+<br />
+
+### 2. `document.createTextNode(textContent)`
+
+產生一個文字節點
+
+```jsx showLineNumbers
+let text = document.createTextNode('Hello world !!') // #text
+console.log(text.textContent) // Hello world !!
+```
+
+<br />
+
+### 3. `ParentNode.appendChild(childNode)`
+
+將一個**節點**附加到指定父節點 ( ParentNode ) 的子節點列表末尾處，如果將被附加的節點已存在 DOM Tree 中，`appendChild()` 只會將該節點移動至新的位置，不需事先移除。
+
+```jsx showLineNumbers
+const app = document.querySelector('div#app')
+let p = document.createElement('p')
+app.appendChild(p)
+```
+
+此時的 HTML :
+
+```html showLineNumbers
+<div id="app">
+  <p></p>
+</div>
+```
+
+<br />
+
+### 4. `el.setAttrribute(name, value)`
+
+設置 `el` 上某個屬性值，如果屬性已經存在，則更新該值；否則添加新的屬性名稱與值。
+
+```jsx showLineNumbers
+let img = document.querySelector('.img') // <img class="img">
+img.setAttribute('src', './img.png') // <img class="img" src="./img.png">
+img.setAttribute('alt', 'Image') // <img class="img" src="./img.png" alt="Image">
+```
+
+<br />
+
+### 5. `el.removeAttribute(name)`
+
+將 `el` 上某個屬性移除。
+
+```jsx
+img.removeAttribute('alt') // <img class="img" src="./img.png">
+```
+
+<br />
+
+### 6. `ChildNode.replaceWith(target)`
+
+將 `target` ( Node 物件 或 DOMString ) 替換該節點 ( ChildNode ) 的父節點下當前的子節點。
+
+```jsx showLineNumbers
+const app = document.querySelector('div#app')
+let p = document.createElement('p')
+app.appendChild(p)
+
+let span = document.createElement('span')
+p.replaceWith(span)
+```
+
+此時的 HTML :
+
+```html showLineNumbers
+<div id="app">
+  <span></span>
+</div>
+```
+
+<br />
+
+### 7. `el.remove()`
+
+將 `el` 從它所屬的 DOM Tree 中刪除。
+
+```jsx showLineNumbers
+let el = document.querySelector('p.text')
+el.remove()
+```
+
+<br />
+
+### 其他 DOM 操作
+
+#### 1. `document.createDocumentFragment()`
+
+屬於 DOM 的節點 ( Node )，實際渲染到 DOM 上會將 fragment 裡面所有子節點渲染出來，而 fragment 本身會被這些子節點取代，可以把 fragment 當作是裝這些子節點的箱子，箱子只是一個包裝而已。
+
+[MDN 連結](https://developer.mozilla.org/zh-TW/docs/Web/API/Document/createDocumentFragment)
+
+#### 2. `Node.cloneNode()`
+
+用來複製一個節點 ( Node )。
+
+[MDN 連結](https://developer.mozilla.org/zh-TW/docs/Web/API/Node/cloneNode)
+
+#### 範例 :
+
+```jsx showLineNumbers
+// 頁碼功能 - 建立 HTML 模板 ( 傳陣列資料 )
+function createHTML(elData) {
+  let fragment = document.createDocumentFragment()
+  let el_li = document.createElement('li')
+  let el_a = document.createElement('a')
+  elData.forEach(el => {
+    el_li = el_li.cloneNode(false)
+    el_a = el_a.cloneNode(false)
+    el_li.setAttribute('class', 'filterPage__pagination-item flex-center')
+    el_a.setAttribute('href', 'javascript:;')
+    el_a.setAttribute('class', el['className'])
+    el_a.setAttribute('data-page', el['content'])
+    el_a.innerHTML = el['content']
+    el_li.appendChild(el_a)
+    fragment.appendChild(el_li)
+  })
+  return fragment // <li><a>...</a></li>
+}
+```
+
+<br />
+
+## Virtual DOM 原理
+
+![](https://i.imgur.com/r25zqAl.png) <br />
+( 圖片來源 : https://medium.com/手寫筆記/build-a-simple-virtual-dom-5cf12ccf379f )
+
+### 1. 建立描述 DOM 的物件 - vNode - `vNode.js`、`createElement.js`
+
+```jsx showLineNumbers
+const vNode = {
+  tagName: 'div',
+  attrs: {
+    id: 'app',
+    class: 'container',
+  },
+  children: [
+    //...
+  ],
+}
+```
+
+上面是非常簡易描述 DOM 的物件，透過 `tagName` 定義 HTML 標籤名稱，`attrs` 為包含 HTML 標籤上所有屬性的物件，`children` 為該 HTML 元素底下所有子元素。
+
+<br />
+
+### 2. 將 vNode 轉換成實際的 Node - `render.js`
+
+也就是將描述 DOM 的物件 ( 如上 )，轉換成這樣的過程 :
+
+```html
+<div
+  id="app"
+  class="container"
+>
+  <!-- children... -->
+</div>
+```
+
+需要注意的是，這邊只是個過程，畫面此時還並沒有轉換後的結果，最後須回傳結果，交由其他程式處理。
+
+<br />
+
+### 3. 把 Node 掛載到真實 DOM 上 - `mount.js`
+
+顧名思義，將 vNode 轉換後回傳的結果掛載到畫面上呈現 ( `replaceWith()` )
+
+<br />
+
+## Virtual DOM 運作過程
+
+Vue 以資料驅動做基礎，當資料發生改變，畫面上有連動到資料的 DOM 也會跟著改變。
+
+透過 diff ( `diff.js` ) 演算法比較 **新的 Virtual DOM** 和 **舊的 Virtual DOM**，再改變真實 DOM，這邊我們有兩種方式做資料的更新 :
+
+### 1. 定時器 Timer 每秒執行演算法比較 : `setInterval(..., 1000)`
+
+![vDOM_process.png](https://i.imgur.com/lcnzBy5.png) <br />
+( 圖片來源 : https://medium.com/手寫筆記/build-a-simple-virtual-dom-5cf12ccf379f )
+
+### 2. 觀察者模式 Observer Pattern : `Proxy`
+
+![vDOM_proxy.png](https://i.imgur.com/4HUJurf.png) <br />
+( 圖片來源 : https://medium.com/手寫筆記/build-a-simple-virtual-dom-5cf12ccf379f )
+
+<br />
+
+## 開始實作
+
+**💡 情境：使用 Virtual DOM 每秒隨機產生 0 ~ 9 張指定的圖片。**
+
+### 主程式 - vNode.js
+
+將上面 Virtual DOM 原理所需要用到的功能匯入主程式 :
+
+```jsx showLineNumbers
+import createElement from './createElement.js'
+import render from './render.js'
+import mount from './mount.js'
+import diff from './diff.js'
+```
+
+先介紹主程式部分，稍後會來看看這些功能都是如何使用 JS 達成的。
+
+建立一個會 **回傳描述 DOM 物件** 的函式 `createVApp()`，這個函式需要傳入隨機 0 ~ 10 的 `count`
+
+```jsx showLineNumbers
+const createVApp = function (count) {
+  // 產生最外層 id="app" 的 div 容器，所有更動都會掛載到這個 app 容器上
+  return createElement('div', {
+    attrs: {
+      id: 'app',
+      'data-count': count,
+    },
+    children: [
+      // 產生一個容器 div
+      createElement('div', {
+        attrs: {
+          class: 'container',
+          style: 'display: flex; flex-direction: column; align-items: center;',
+        },
+        children: [
+          // 產生一個放文字的 div 容器
+          createElement('div', {
+            attrs: {
+              style: 'padding: 12px 0; font-size: 20px;',
+            },
+            children: [
+              // 產生一個描述圖片數量的文字
+              String(`Current count: ${count}`),
+            ],
+          }),
+          // 產生一個圖片 div 容器
+          createElement('div', {
+            attrs: {
+              class: 'imgContainer',
+            },
+            children: [
+              // 產生 count 數量的 img DOM 物件
+              ...Array.from({ length: count }, () =>
+                createElement('img', {
+                  attrs: {
+                    src: './cat.jpg',
+                    alt: 'cat meme',
+                    style: 'width: 100px; margin: 4px 4px;',
+                  },
+                })
+              ),
+            ],
+          }),
+        ],
+      }),
+    ],
+  })
+}
+```
+
+<br />
+
+初始化 **Virtual DOM → Real DOM**
+
+```jsx showLineNumbers
+let count = 0 // 預設 count 數量
+let vApp = createVApp(count) // 建立描述 DOM 物件
+const $app = render(vApp) // 將 DOM 物件轉換成實際的 Node
+let $rootEl = mount($app, document.getElementById('app')) // 將實際 Node 掛載到畫面上
+```
+
+<br />
+
+使用 `setInterval` 當計時器，每秒更新 `count` 隨機數，並呼叫 `createVApp(count)` 賦值到新變數上 `vNewApp`，並使用 diff 及透過 diff 回傳的 patch 函式更新 Node。
+
+```jsx showLineNumbers
+setInterval(() => {
+  count = Math.floor(Math.random() * 10) // 每秒隨機 0 ~ 10 數字
+  const vNewApp = createVApp(count) // 新的描述 DOM 物件
+  const patch = diff(vApp, vNewApp) // diff 回傳的函式用變數 patch 接住
+  $rootEl = patch($rootEl) // 使用 patch 函式更新 Node
+  // console.log($rootEl) // $rootEl 為實際 Node，是可以直接操作的
+  vApp = vNewApp // 更新描述 DOM 物件
+}, 1000)
+```
+
+#### 主程式完整程式碼
+
+```jsx showLineNumbers
+// ----- vNode.js -----
+import createElement from './createElement.js'
+import render from './render.js'
+import mount from './mount.js'
+import diff from './diff.js'
+
+const createVApp = function (count) {
+  // 產生最外層 id="app" 的 div 容器，所有更動都會掛載到這個 app 容器上
+  return createElement('div', {
+    attrs: {
+      id: 'app',
+      'data-count': count,
+    },
+    children: [
+      // 產生一個容器 div
+      createElement('div', {
+        attrs: {
+          class: 'container',
+          style: 'display: flex; flex-direction: column; align-items: center;',
+        },
+        children: [
+          // 產生一個放文字的 div 容器
+          createElement('div', {
+            attrs: {
+              style: 'padding: 12px 0; font-size: 20px;',
+            },
+            children: [
+              // 產生一個描述圖片數量的文字
+              String(`Current count: ${count}`),
+            ],
+          }),
+          // 產生一個圖片 div 容器
+          createElement('div', {
+            attrs: {
+              class: 'imgContainer',
+            },
+            children: [
+              // 產生 count 數量的 img DOM 物件
+              ...Array.from({ length: count }, () =>
+                createElement('img', {
+                  attrs: {
+                    src: './cat.jpg',
+                    alt: 'cat meme',
+                    style: 'width: 100px; margin: 4px 4px;',
+                  },
+                })
+              ),
+            ],
+          }),
+        ],
+      }),
+    ],
+  })
+}
+
+let count = 0 // 預設 count 數量
+let vApp = createVApp(count) // 建立描述 DOM 物件
+const $app = render(vApp) // 將 DOM 物件轉換成實際的 Node
+let $rootEl = mount($app, document.getElementById('app')) // 將實際 Node 掛載到畫面上
+
+setInterval(() => {
+  count = Math.floor(Math.random() * 10) // 每秒隨機 0 ~ 10 數字
+  const vNewApp = createVApp(count) // 新的描述 DOM 物件
+  const patch = diff(vApp, vNewApp) // diff 回傳的函式用變數 patch 接住
+  $rootEl = patch($rootEl) // 使用 patch 函式更新 Node
+  // console.log($rootEl) // $rootEl 為實際 Node，是可以直接操作的
+  vApp = vNewApp // 更新描述 DOM 物件
+}, 1000)
+```
+
+<br />
+
+### 建立描述 DOM 物件 - createElement.js
+
+在主程式 vNode.js 有多次呼叫 `createElement()`，透過傳入參數建立描述 DOM 物件。
+
+```jsx showLineNumbers
+const createElement = function (tagName, { attrs = {}, children = [] } = {}) {
+  return {
+    tagName,
+    attrs,
+    children,
+  }
+}
+
+export default createElement
+```
+
+比較要注意的是，HTML 標籤屬性 `attrs` 是物件，而 HTML 標籤如果還有子元素，是傳入 `children` 陣列裡面，方便我們後續使用迴圈或遞迴操作，另外也要在參數上給予預設值 ( 空物件、空陣列 )。
+
+<br />
+
+### 將 vNode 轉換成實際的 Node - render.js
+
+主要就是負責把 `createElement()` 產生的 DOM 物件轉換成實際的 Node。
+
+```jsx showLineNumbers
+const render = function (vNode) {
+  // console.log(vNode)
+  if (typeof vNode === 'string') {
+    return document.createTextNode(vNode)
+  }
+  return renderElement(vNode)
+}
+
+// 不是單純字串
+const renderElement = function ({ tagName, attrs, children }) {
+  const $el = document.createElement(tagName)
+  // HTML 標籤屬性設定
+  for (const key in attrs) {
+    $el.setAttribute(key, attrs[key])
+  }
+  // HTML 標籤的子元素遞迴設定
+  children.forEach(child => {
+    const $child = render(child)
+    $el.appendChild($child)
+  })
+  // console.log('e.target: ', $el)
+  return $el
+}
+
+export default render
+```
+
+撰寫 HTML 標籤的時候，子元素不只有 tag，也有字串 String，因此我們要在轉換成真實 Node 的時候，把遇到字串的狀況考量進去。
+
+在 `render(vNode)` 這個 function 中，如果 `vNode` 傳入的節點是字串，就回傳 `document.createTextNode(vNode)` 這個方法；如果不是字串，就回傳 `renderElement(vNode)` 這個 function。
+
+在 `renderElement(vNode)` 這個 function 中，因為可以確定是傳入 DOM 描述物件而非字串，所以我們使用傳入的 `tagName` 產生新節點，透過 `for in` 和 `setAttribute()` 設定屬性，且因為我們子元素儲存在 `children` 陣列，使用遞迴呼叫 `render()` 的方式訪問所有子元素的子元素，和 `appendChild()` 將所有子元素掛到當前節點 ( `tagName`，也就是 `$el` ) 上，並回傳，此時的 `$el` 已經成功轉換成實際的 Node，接下來只要把這個 Node 掛載到畫面上就好了。
+
+<br />
+
+### 把 Node 掛載到真實 DOM 上 - mount.js
+
+功能非常單純，使用前面介紹的 `replaceWith()` 功能替換成新的 DOM Tree。
+
+```jsx showLineNumbers
+export default function ($node, $target) {
+  // highlight-next-line
+  $target.replaceWith($node)
+  return $node
+}
+```
+
+在主程式初始化，我們使用 :
+
+```jsx showLineNumbers
+let $rootEl = mount($app, document.getElementById('app'))
+```
+
+把產生的 `$app` 這個 DOM Tree，掛載 ( 替換 ) 到 `<div id=”app”></div>` 上。
+
+<br />
+
+### Diff 演算法
+
+要把一棵樹 ( DOM Tree )轉換成另一棵樹，並且要使用最少的步驟，其時間複雜度是 O(n³)。問題在於如果節點有 1000 個，所以計算量就來到 10 億次，計算量將會讓 CPU 造成不小的開銷。
+
+因此為了解決這個問題，React 與 Vue 將時間複雜度降低至 **O(n)**，總歸來說，就是只處理同一層級的節點，不進行跨節點的比較，如果遇到節點不一樣的情況，就砍掉重新建立節點。
+
+而此篇文章使用的 Diff 算法的時間複雜度也是 **O(n)**，只處理同一層級的節點。
+
+> 以上截至 : [Virtual DOM | 為了瞭解原理，那就來實作一個簡易 Virtual DOM 吧！](https://medium.com/%E6%89%8B%E5%AF%AB%E7%AD%86%E8%A8%98/build-a-simple-virtual-dom-5cf12ccf379f#e645)
+
+<br />
+
+**O(1) 陣列讀取**
+
+直接讀取陣列中某個位置的值，共花費 1 個步驟。
+
+```jsx showLineNumbers
+const ary = [1, 2, 3, 4, 5]
+console.log(ary[2]) // 3
+```
+
+<br />
+
+**O(n) 簡易搜尋**
+
+從 index: 0 開始搜尋到 n 個位置直到獲取目標 ( 共花 n 個步驟 )。
+
+```jsx showLineNumbers
+const ary = [1, 2, 3, 4, 5]
+ary.forEach(item => {
+  if (item === 3) console.log(item) // 3
+})
+```
+
+<br />
+
+**O(log n) 二分搜尋法**
+
+終極密碼概念，也可以參考此 Codepen :
+
+<iframe
+  height="300"
+  style="width: 100%;"
+  style={{
+    width: '100%',
+  }}
+  scrolling="no"
+  title="BigOlogn"
+  src="https://codepen.io/jake1155/embed/Yzebweg?default-tab=js"
+  frameborder="no"
+  loading="lazy"
+  allowtransparency="true"
+  allowfullscreen="true"
+>
+  See the Pen <a href="https://codepen.io/jake1155/pen/Yzebweg">BigOlogn</a> by
+  Ting Lin (<a href="https://codepen.io/jake1155">@jake1155</a>) on{' '}
+  <a href="https://codepen.io">CodePen</a>.
+</iframe>
+
+<br />
+
+- 時間複雜度參考文章 : [初學者學演算法｜從時間複雜度認識常見演算法](https://medium.com/appworks-school/%E5%88%9D%E5%AD%B8%E8%80%85%E5%AD%B8%E6%BC%94%E7%AE%97%E6%B3%95-%E5%BE%9E%E6%99%82%E9%96%93%E8%A4%87%E9%9B%9C%E5%BA%A6%E8%AA%8D%E8%AD%98%E5%B8%B8%E8%A6%8B%E6%BC%94%E7%AE%97%E6%B3%95-%E4%B8%80-b46fece65ba5)
+
+<br />
+
+Diff 演算法主要傳入兩個參數，分別是 `vOldNode` 舊的 DOM 物件，和 `vNewNode` 新的 DOM 物件，這兩個參數都是描述 DOM 的物件。
+
+函式需要考慮四種情況 :
+
+1. 如果 `vNewNode` 為 `undefined`，代表原先的 `vOldNode` 這個節點是即將要被刪除的節點，所以要使用 `remove()` 的方式移除實際 Node 節點。
+2. 舊節點 或 新節點可能會是字串，如果兩者不一樣，則新節點文字取代舊節點文字，反之則不變。
+3. 舊節點 與 新節點標籤若不一樣，則新節點取代舊節點。
+4. 舊節點 與 新節點標籤若一樣，繼續比較新舊節點的屬性及子節點。( 額外用函式處理 )
+
+需要注意的是，diff 函式都是回傳 **一個函式**，在主程式 **vNode.js** 中使用 patch 變數接住回傳的函式，再呼叫傳入舊的實際 Node，並賦值回去 ( `$rootEl` )，達到更新 DOM ( 畫面 ) 的效果。
+
+```jsx showLineNumbers
+const patch = diff(vApp, vNewApp) // diff 回傳的函式用變數 patch 接住
+$rootEl = patch($rootEl) // 更新 DOM
+```
+
+<br />
+
+**diff 主要函式**
+
+```jsx showLineNumbers
+// vOldNode、vNewNode 是 createElement() 回傳給 createVApp 的 DOM 物件
+const diff = function (vOldNode, vNewNode) {
+  // 傳進來的新節點如果是 undefined，代表該節點是要被刪除的節點，return undefined
+  if (vNewNode === undefined) {
+    return $node => {
+      $node.remove()
+      return undefined
+    }
+  }
+
+  // 如果傳進來的節點是字串
+  if (typeof vOldNode === 'string' || typeof vNewNode === 'string') {
+    // 如果字串有改變，就回傳掛載函式 (舊字串 => 新字串)
+    if (vOldNode !== vNewNode) {
+      return $node => {
+        const $newNode = render(vNewNode)
+        return mount($newNode, $node)
+      }
+      // 如果字串沒有改變，就回傳一樣的節點
+    } else {
+      return $node => $node
+    }
+  }
+
+  // 如果新舊節點標籤不一樣，則新節點取代舊節點
+  if (vOldNode.tagName !== vNewNode.tagName) {
+    return $node => {
+      const $newNode = render(vNewNode)
+      return mount($newNode, $node)
+    }
+  }
+
+  // 新舊節點標籤一樣，繼續比較新舊節點的屬性及子節點
+  const patchAttrs = diffAttrs(vOldNode.attrs, vNewNode.attrs)
+  const patchChildren = diffChildren(vOldNode.children, vNewNode.children)
+
+  return $node => {
+    patchAttrs($node)
+    patchChildren($node)
+    return $node
+  }
+}
+```
+
+<br />
+
+**比較新舊節點屬性 `diffAttrs(oldAttrs, newAttrs)`**
+
+我們需要在標籤上 **設定屬性** 與 **刪除屬性** 兩種功能，這邊把需要變動的屬性使用 `patches` 陣列儲存函式。
+
+```jsx showLineNumbers
+const diffAttrs = function (oldAttrs, newAttrs) {
+  // 儲存屬性變動的 patch 函式
+  const patches = []
+
+  // 新增 "設定新屬性的函式" 到 patches 陣列
+  for (const key in newAttrs) {
+    patches.push($node => {
+      $node.setAttribute(key, newAttrs[key])
+      return $node
+    })
+  }
+
+  // 如果 "沒有" 舊屬性在新屬性上，就新增 "移除舊屬性函式" 到 patches 陣列
+  for (const key in oldAttrs) {
+    if (!(key in newAttrs)) {
+      patches.push($node => {
+        $node.removeAttribute(key)
+        return $node
+      })
+    }
+  }
+
+  // 回傳批次更新函式，這個函式會執行在 patches 陣列裡每個函式
+  return $node => {
+    patches.forEach(patch => {
+      patch($node)
+    })
+  }
+}
+```
+
+<br />
+
+**比較新舊節點的子節點 `diffChildren(oldVChildren, newVChildren)`**
+
+與比較新舊節點的函式概念相近，一樣將需要更新的子節點 push 進 childPatches 及 additionalPatches 陣列。
+
+```jsx
+const diffChildren = function (oldVChildren, newVChildren) {
+  // 舊節點在新節點上是否需要更新或刪除 (run diff)
+  // 建立 childPatches 函式陣列，若 newVChildren[i] 為 undefined，回傳 $node.remove() 的函式
+  const childPatches = []
+  oldVChildren.forEach((oldVChild, i) => {
+    childPatches.push(diff(oldVChild, newVChildren[i]))
+  })
+
+  // 插入新節點時，建立 additionalPatches 函式陣列
+  const additionalPatches = []
+  newVChildren.slice(oldVChildren.length).forEach(additionalVChild => {
+    additionalPatches.push($node => {
+      $node.appendChild(render(additionalVChild))
+      return $node
+    })
+  })
+
+  // 回傳 patch 函式
+  return $node => {
+    // 若刪除子節點，for loop 的 i 可能會超過 $node.childNodes 的長度，所以從最後一個 childNode 開始處理。
+    for (let i = childPatches.length - 1; i >= 0; i--) {
+      const $child = $node.childNodes[i]
+      const patch = childPatches[i]
+      patch($child)
+    }
+
+    // 插入子節點
+    additionalPatches.forEach(patch => {
+      patch($node)
+    })
+
+    return $node
+  }
+}
+```
+
+<br />
+
+#### diff 完整程式碼
+
+```jsx
+import mount from './mount.js'
+import render from './render.js'
+
+let diffCount = 0
+let diffAttrsCount = 0
+let diffChildrenCount = 0
+
+// 這邊都是回傳 patch 函式
+// vOldNode、vNewNode 是 createElement() 回傳給 createVApp 的 DOM 物件
+const diff = function (vOldNode, vNewNode) {
+  // 傳進來的新節點如果是 undefined，代表該節點是要被刪除的節點，return undefined
+  if (vNewNode === undefined) {
+    return $node => {
+      $node.remove()
+      return undefined
+    }
+  }
+
+  // 如果傳進來的節點是字串
+  if (typeof vOldNode === 'string' || typeof vNewNode === 'string') {
+    // 如果字串有改變，就回傳掛載函式 (舊字串 => 新字串)
+    if (vOldNode !== vNewNode) {
+      return $node => {
+        const $newNode = render(vNewNode)
+        return mount($newNode, $node)
+      }
+      // 如果字串沒有改變，就回傳一樣的節點
+    } else {
+      return $node => $node
+    }
+  }
+
+  // 如果新舊節點標籤不一樣，則新節點取代舊節點
+  if (vOldNode.tagName !== vNewNode.tagName) {
+    return $node => {
+      const $newNode = render(vNewNode)
+      return mount($newNode, $node)
+    }
+  }
+
+  // 新舊節點標籤一樣，繼續比較新舊節點的屬性及子節點
+  const patchAttrs = diffAttrs(vOldNode.attrs, vNewNode.attrs)
+  const patchChildren = diffChildren(vOldNode.children, vNewNode.children)
+
+  return $node => {
+    patchAttrs($node)
+    patchChildren($node)
+    return $node
+  }
+}
+
+// 回傳批次更新 attrs 的函式
+const diffAttrs = function (oldAttrs, newAttrs) {
+  // 儲存屬性變動的 patch 函式
+  const patches = []
+
+  // 新增 "設定新屬性的函式" 到 patches 陣列
+  for (const key in newAttrs) {
+    patches.push($node => {
+      $node.setAttribute(key, newAttrs[key])
+      return $node
+    })
+  }
+
+  // 如果 "沒有" 舊屬性在新屬性上，就新增 "移除舊屬性函式" 到 patches 陣列
+  for (const key in oldAttrs) {
+    if (!(key in newAttrs)) {
+      patches.push($node => {
+        $node.removeAttribute(key)
+        return $node
+      })
+    }
+  }
+
+  // 回傳批次更新函式，這個函式會執行在 patches 陣列裡每個函式
+  return $node => {
+    patches.forEach(patch => {
+      patch($node)
+    })
+  }
+}
+
+// 比較新舊節點是否需要更新
+const diffChildren = function (oldVChildren, newVChildren) {
+  diffChildrenCount += 1
+  // 舊節點在新節點上是否需要更新或刪除 (run diff)
+  // 建立 childPatches 函式陣列，若 newVChildren[i] 為 undefined，回傳 $node.remove() 的函式
+  const childPatches = []
+  oldVChildren.forEach((oldVChild, i) => {
+    childPatches.push(diff(oldVChild, newVChildren[i]))
+  })
+
+  // 插入新節點時，建立 additionalPatches 函式陣列
+  const additionalPatches = []
+  newVChildren.slice(oldVChildren.length).forEach(additionalVChild => {
+    additionalPatches.push($node => {
+      $node.appendChild(render(additionalVChild))
+      return $node
+    })
+  })
+
+  // 回傳 patch 函式
+  return $node => {
+    // 若刪除子節點，for loop 的 i 可能會超過 $node.childNodes 的長度，所以從最後一個 childNode 開始處理。
+    for (let i = childPatches.length - 1; i >= 0; i--) {
+      const $child = $node.childNodes[i]
+      const patch = childPatches[i]
+      patch($child)
+    }
+
+    // 插入子節點
+    additionalPatches.forEach(patch => {
+      patch($node)
+    })
+
+    return $node
+  }
+}
+
+export default diff
+```
+
+<br />
+
+[GitHub 完整程式碼](https://github.com/tingminitime/vDOM_practice)
+
+[Virtual DOM - Demo Page](https://tingminitime.github.io/vDOM_practice/)
+
+<br />
+
+## Reference
+
+---
+
+- [Virtual DOM | 為了瞭解原理，那就來實作一個簡易 Virtual DOM 吧！](https://medium.com/手寫筆記/build-a-simple-virtual-dom-5cf12ccf379f)
