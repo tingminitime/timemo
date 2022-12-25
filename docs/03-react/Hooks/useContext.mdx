@@ -6,6 +6,9 @@ sidebar_position: 3
 tags: [JavaScript, React, hooks, useContext]
 ---
 
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+
 # useContext
 
 ## Context 是什麼 ?
@@ -111,7 +114,7 @@ function Message({ user }) {
 const Context = createContext(defaultValue)
 ```
 
-使用 `createContext` 在元件外面建立一個 context object，而 `defaultValue` 不一定需要，有的話可以給這個 Context 預設值，如果 Provider 沒有給 `value`，那麼拿取 Context 資料的元件將會拿到這個預設值。
+使用 `createContext` 在元件外面建立一個 context object，而 `defaultValue` 不一定需要，有的話可以給這個 Context 預設值，如果沒有 Provider，那麼拿取 Context 資料的元件將會拿到這個預設值。
 
 了解 `createContext` 後，我們在上面範例的元件外建立 `UserContext` :
 
@@ -235,8 +238,6 @@ function Message() {
 
 `MainPage`、`Content`、`Message` 這三個元件不再需要使用 props 傳遞 `user` 資料，因此我們將 props 移除，然後在 Message 裡面使用 `useContext(UserContext)`，它會回傳我們需要的 `user` 資料，這樣就大功告成了 !
 
-[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-1-t81n9u?file=/src/App.js)
-
 <iframe
   src="https://codesandbox.io/embed/usecontext-simple-1-t81n9u?fontsize=14&hidenavigation=1&theme=dark"
   style={{
@@ -250,6 +251,8 @@ function Message() {
   allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
   sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 ></iframe>
+
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-1-t81n9u?file=/src/App.js)
 
 <br />
 
@@ -283,13 +286,10 @@ export function useUser() {
 
 在原本的元件 `import` 這兩個方法使用 :
 
-import Tabs from '@theme/Tabs'
-import TabItem from '@theme/TabItem'
-
 <Tabs>
 <TabItem value="app" label="App.js">
 
-```jsx showLineNumbers
+```jsx showLineNumbers title="/src/App.js"
 import { useState } from 'react'
 import { UserProvider, useUser } from './contexts/UserContext'
 
@@ -339,8 +339,7 @@ function Message() {
 </TabItem>
 <TabItem value="context" label="UserContext.js">
 
-```jsx showLineNumbers
-// ./src/contexts/UserContext.js
+```jsx showLineNumbers title="/src/contexts/UserContext.js"
 import { createContext, useContext } from 'react'
 
 const UserContext = createContext()
@@ -361,8 +360,6 @@ export function useUser() {
 
 這樣就大功告成囉 !
 
-[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-2-vj4ecv?file=/src/App.js)
-
 <iframe
   src="https://codesandbox.io/embed/usecontext-simple-2-vj4ecv?fontsize=14&hidenavigation=1&theme=dark"
   style={{
@@ -377,7 +374,126 @@ export function useUser() {
   sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 ></iframe>
 
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-2-vj4ecv?file=/src/App.js)
+
 <br />
+
+## `useContext` 會向上查找相同且最近的 Provider
+
+讓我們改寫一下 `App` 元件，然後 `UserContext` 加入預設值 `{ name: 'Default' }` :
+
+<Tabs>
+<TabItem value="app" label="App.js">
+
+```jsx showLineNumbers title="/src/App.js"
+import { UserProvider, useUser } from './contexts/UserContext'
+
+// 第一層 (user 資料在這層)
+function App() {
+  // highlight-start
+  const [user1, setUser1] = useState({ name: 'Tim' })
+  const [user2, setUser2] = useState({ name: 'John' })
+  const user = useUser()
+  // highlight-end
+
+  return (
+    <>
+      <UserProvider user={user1}>
+        <UserProvider user={user2}>
+          {/* highlight-start */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <p style={{ textAlign: 'center' }}>App</p>
+            <p>
+              User: <span style={{ color: 'navy' }}>{user.name}</span>
+            </p>
+          </div>
+          {/* highlight-end */}
+          <MainPage></MainPage>
+        </UserProvider>
+      </UserProvider>
+    </>
+  )
+}
+```
+
+</TabItem>
+<TabItem value="context" label="UserContext.js">
+
+```jsx showLineNumbers title="/src/contexts/UserContext/js"
+import { createContext, useContext } from 'react'
+
+// highlight-next-line
+const UserContext = createContext({ name: 'Default' })
+
+export function UserProvider({ children, user }) {
+  return <UserContext.Provider value={user}>{children}</UserContext.Provider>
+}
+
+export function useUser() {
+  return useContext(UserContext)
+}
+```
+
+</TabItem>
+</Tabs>
+
+這邊用兩個 `UserProvider` 覆蓋裡面的 DOM 元素和 `MainPage` 元件，其餘元件不變，此時的畫面會是這樣
+
+![](https://i.imgur.com/3yns8sk.png)
+
+最裡面 `Message` 元件拿到的資料會是 `user2` 的 `{ name: 'John' }`，而**不是** `user1` 的 `{ name: 'Tim' }`，因為 `Message` 元件使用 `useUser` ，也就是使用 `useContext(UserContext)` 的時候會往上查找到離它最近、對應 Context 的 Provider，因此才會拿到資料 `user2`。
+
+還沒結束，焦點轉移到 `App` 元件中，這邊改使用 `const user = useUser()` 拿到 user 資料，渲染出來的 `user.name`，會是 `default`。
+
+```jsx
+import { UserProvider, useUser } from './contexts/UserContext'
+
+// 第一層 (user 資料在這層)
+function App() {
+  const [user1, setUser1] = useState({ name: 'Tim' })
+  const [user2, setUser2] = useState({ name: 'John' })
+  const user = useUser()
+
+  return (
+    <>
+      <UserProvider user={user1}>
+        <UserProvider user={user2}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <p style={{ textAlign: 'center' }}>App</p>
+            <p>
+              User: <span style={{ color: 'navy' }}>{user.name}</span>
+            </p>
+          </div>
+          <MainPage></MainPage>
+        </UserProvider>
+      </UserProvider>
+    </>
+  )
+}
+```
+
+我第一次看的時候覺得很奇怪，明明這個 `user.name` 是包在 `UserProvider` 裡面沒錯，但它並不像我們前面說會往上查找拿到最近 Provider 而拿到 `user2` 的 `{ name: 'John' }`，這是為什麼呢 ?
+
+其實仔細思考一下 JavaScript closure 的原理就不難理解，在 `App` 元件 `UserProvider` 裡面整個 `div` 都是屬於 `App` 元件所執行且 return 的，在 `App` 元件的外面並沒有任何 Provider，因此在 `App` 元件裡面 `useUser()` 所拿到的 `user` 資料就會是這個 Context 的預設值 `{ name: 'Default' }`。
+
+所以寫 React 真的要對 JavaScript 的基礎有相當的理解，我還思考了一段時間呢。 ( 汗
+
+<iframe
+  src="https://codesandbox.io/embed/usecontext-simple-3-qeut37?fontsize=14&hidenavigation=1&theme=dark"
+  style={{
+    width: '100%',
+    height: '500px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="useContext-simple-3"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
+
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/usecontext-simple-3-qeut37?file=/src/App.js)
+
 <br />
 
 希望這個筆記對大家有幫助，如果有錯誤或不夠清楚的地方也歡迎在底下留言讓我改進 (-ω-ゞ
