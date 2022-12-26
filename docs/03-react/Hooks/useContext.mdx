@@ -443,9 +443,9 @@ export function useUser() {
 
 最裡面 `Message` 元件拿到的資料會是 `user2` 的 `{ name: 'John' }`，而**不是** `user1` 的 `{ name: 'Tim' }`，因為 `Message` 元件使用 `useUser` ，也就是使用 `useContext(UserContext)` 的時候會往上查找到離它最近、對應 Context 的 Provider，因此才會拿到資料 `user2`。
 
-還沒結束，焦點轉移到 `App` 元件中，這邊改使用 `const user = useUser()` 拿到 user 資料，渲染出來的 `user.name`，會是 `default`。
+還沒結束，焦點轉移到 `App` 元件中，這邊改使用 `const user = useUser()` 拿到 `user` 資料，如上圖所示，渲染出來的 `user.name`，會是 `default`。
 
-```jsx
+```jsx showLineNumbers
 import { UserProvider, useUser } from './contexts/UserContext'
 
 // 第一層 (user 資料在這層)

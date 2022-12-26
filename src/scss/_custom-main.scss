@@ -1,7 +1,8 @@
 @use './variable';
 
 [data-theme='light'] {
-  main {
+  main[class^='docMainContainer'],
+  .main-wrapper {
     background-color: variable.$primary-white;
   }
 }

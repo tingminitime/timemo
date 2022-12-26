@@ -99,15 +99,18 @@ const config = {
             position: 'left',
           },
           {
-            href: 'https://github.com/tingminitime',
-            label: 'GitHub',
-            position: 'right',
-          },
-          {
             type: 'dropdown',
             label: '更多',
             position: 'left',
             items: [
+              {
+                to: '/docs/tags',
+                label: '前端筆記標籤',
+              },
+              {
+                to: '/blog/tags',
+                label: 'Blog標籤',
+              },
               {
                 to: '/more/about',
                 label: '關於我',
@@ -117,6 +120,11 @@ const config = {
                 label: '隱私權政策',
               },
             ],
+          },
+          {
+            href: 'https://github.com/tingminitime',
+            label: 'GitHub',
+            position: 'right',
           },
         ],
       },
