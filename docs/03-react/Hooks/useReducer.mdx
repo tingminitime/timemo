@@ -6,6 +6,128 @@ sidebar_position: 3
 tags: [JavaScript, React, hooks, useReducer]
 ---
 
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+
 # useReducer
 
-內容更新中...
+比起 `useState` 只能用一個方法來管理狀態，Reducer 可以讓我們更靈活的管理複雜的資料狀態。
+
+舉例來說，在一個有 CRUD 的 Todo-list 可能會長這樣 :
+
+```jsx showLineNumbers title="TodoList.js"
+function TodoList() {
+  const [todos, setTodos] = useState([])
+  const inputRef = useRef()
+
+  // 新增 Todo
+  function addTodoHandler() {
+    setTodos([
+      ...todos,
+      {
+        id: Date.now(),
+        content: inputRef.current.value,
+        completed: false,
+      },
+    ])
+    inputRef.current.value = ''
+  }
+
+  // 完成/取消完成 Todo
+  function toggleTodoHandler(e, id) {
+    setTodos(
+      todos.map(todo => {
+        return {
+          ...todo,
+          completed: todo.id === id ? e.target.checked : todo.completed,
+        }
+      })
+    )
+  }
+
+  // 編輯 Todo
+  function editTodoHandler(originalContent, id) {
+    const editContent = prompt('請輸入修改內容', originalContent)
+    if (!editContent) return
+    setTodos(
+      todos.map(todo => {
+        return {
+          ...todo,
+          content: todo.id === id ? editContent : todo.content,
+        }
+      })
+    )
+  }
+
+  // 刪除 Todo
+  function deleteTodoHandler(id) {
+    setTodos(todos.filter(todo => todo.id !== id))
+  }
+
+  return (
+    <>
+      <div>
+        <input
+          type="text"
+          ref={inputRef}
+        />
+        <button
+          type="button"
+          onClick={addTodoHandler}
+        >
+          Add
+        </button>
+      </div>
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id}>
+            <div>
+              <input
+                type="checkbox"
+                onChange={e => toggleTodoHandler(e, todo.id)}
+              />
+              <span>{todo.content}</span>
+              <button
+                type="button"
+                onClick={() => editTodoHandler(todo.content, todo.id)}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteTodoHandler(todo.id)}
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+```
+
+可以注意一下，每一個 CRUD 的方法中都會使用到 `setTodos` 去更新狀態，當未來這個元件的功能愈來愈多，不管是在原本 CRUD 方法中需要額外添加邏輯，或是元件有其他新增的功能導致 function 愈寫愈多，都會影響到程式的複雜度和可讀性。
+
+因此，為了降低元件的複雜度，將某個資料狀態的處理邏輯拆分清楚並集中管理，Reducer 就是其中一個解藥，接下來就讓我介紹一下 `useReducer` 這個 hook 吧 !
+
+:::info
+Reducer 的取名來自於 JavaScript 陣列操作的 `reduce()` 方法中累積資料狀態的特性，可以參考官方文件 [Why are reducers called this way ?](https://beta.reactjs.org/learn/extracting-state-logic-into-a-reducer#why-are-reducers-called-this-way)
+:::
+
+## `useReducer`
+
+同前述說明，是一種管理資料狀態的 hook，`useState` 的替代方案，接近 Redux 寫法 ( 類似 Vuex、Pinia )。
+
+### 基本語法
+
+```jsx
+const [state, dispatch] = useReducer(reducer, initialArg, init?)
+```
+
+<br />
+
+## Reference
+
+---
