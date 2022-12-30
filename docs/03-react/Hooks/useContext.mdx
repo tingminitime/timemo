@@ -461,7 +461,10 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <p style={{ textAlign: 'center' }}>App</p>
             <p>
+              {/* highlight-start */}
+              {/* user.name 會是 default */}
               User: <span style={{ color: 'navy' }}>{user.name}</span>
+              {/* highlight-end */}
             </p>
           </div>
           <MainPage></MainPage>

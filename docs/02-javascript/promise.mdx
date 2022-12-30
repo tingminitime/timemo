@@ -3,7 +3,7 @@ id: javascript-promise
 title: JavaScript - Promise
 sidebar_label: Promise
 sidebar_position: 4
-tags: [JavaScript, Promise, 下班後的程式讀書會]
+tags: [JavaScript, Promise, 下班後的程式讀書會, 前端面試題]
 ---
 
 # JavaScript - Promise
@@ -263,11 +263,11 @@ new Promise((resolve, reject) => {
 })
 ```
 
-比較要注意的是，Promise 的回調函式中程式碼的執行依然是 **同步函式**，直到遇到 `resolve()` 或者 `reject()`，JavaScript 引擎會發出微任務，將其結果放到微任務佇列等待執行。
+比較要注意的是，Promise 的回調函式中程式碼的執行依然是 **同步函式**，遇到 `resolve()` 或者 `reject()`，Promise 會改變狀態為 `Fulfilled` 或是 `Rejected`，此時才能調用 `.then()`，`.then()` 內的函式將放到微任務佇列等待執行。
 
 思考以下 Promise 執行 console 的結果順序為何 :
 
-```javascript
+```javascript showLineNumbers
 const promise = new Promise((resolve, reject) => {
   console.log(1)
   resolve(2)
@@ -296,7 +296,7 @@ const promise = new Promise((resolve, reject) => {
 .then(onFulfilled, onRejected)
 ```
 
-當我們在 Promise 調用了 `resolve()`，JavaScript 引擎會發起一個**微任務**，這個任務由 `then` 的第一個參數 ( Callback ) 所執行，並且這個 Callback 的參數帶有 `resolve(result)` 的 result 結果。
+當我們在 Promise 調用了 `resolve()` 或 `reject()`，意味著此時 Promise 已經改變成功或失敗的狀態，接著就可以使用 `.then()`，然後 JavaScript 引擎會發起一個**微任務**，這個任務由 then 的參數 ( Callback ) 所執行，並且這個 Callback 的參數帶有 `resolve(result)` 的 result 結果。
 
 ```javascript showLineNumbers
 let promise = new Promise((resolve, reject) => {

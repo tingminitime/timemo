@@ -3,7 +3,7 @@ id: javascript-event-loop
 title: JavaScript - Event Loop
 sidebar_label: Event Loop
 sidebar_position: 3
-tags: [JavaScript, Event Loop, 下班後的程式讀書會]
+tags: [JavaScript, Event loop, 下班後的程式讀書會, 前端面試題]
 ---
 
 # JavaScript - Event Loop
@@ -52,7 +52,16 @@ foo()
   src="https://i.imgur.com/iHLRKT9.png"
   alt=""
 />
-<small>(來源 : https://jimmyswebnote.com/javascript-sync-async/)</small>
+<small>
+  (來源 :{' '}
+  <a
+    href="https://flaviocopes.com/node-event-loop/"
+    target="_blank"
+  >
+    https://flaviocopes.com/node-event-loop/
+  </a>
+  )
+</small>
 
 <br />
 <br />
@@ -133,7 +142,7 @@ console.log('blocking end')
 - MutationObserver ( 監聽 DOM tree 變動的 API )
 - Process.nextTick ( 屬於 Node.js 的 Event Loop )
 
-:::tip
+:::info
 注意這邊的微任務 ( Microtask )，指的是 **已經回應後的結果**，而且正等待執行中。
 例如 : Promise 進行的 Ajax 請求已經確認執行完畢 ( Settled )，此時 .then( ... ) 或 .catch( ... ) 將會進入微任務佇列 ( Microtask Queue )，等待執行。
 :::
