@@ -2,18 +2,19 @@
 id: react-reducer
 title: React - useReducer
 sidebar_label: useReducer
-sidebar_position: 3
+sidebar_position: 4
 tags: [JavaScript, React, hooks, useReducer]
 ---
 
 import Tabs from '@theme/Tabs'
 import TabItem from '@theme/TabItem'
+import CodeBlock from '@theme/CodeBlock'
 
 # useReducer
 
 比起 `useState` 只能用一個方法來管理狀態，Reducer 可以讓我們更靈活的管理複雜的資料狀態。
 
-舉例來說，在一個有 CRUD 的 Todo-list 可能會長這樣 :
+#### 舉例來說，在一個有 CRUD 的 Todo-list 可能會長這樣 :
 
 ```jsx showLineNumbers title="TodoList.js"
 function TodoList() {
@@ -116,6 +117,8 @@ function TodoList() {
 Reducer 的取名來自於 JavaScript 陣列操作的 `reduce()` 方法中累積資料狀態的特性，可以參考官方文件 [Why are reducers called this way ?](https://beta.reactjs.org/learn/extracting-state-logic-into-a-reducer#why-are-reducers-called-this-way)
 :::
 
+<br />
+
 ## `useReducer`
 
 同前述說明，是一種管理資料狀態的 hook，`useState` 的替代方案，接近 Redux 寫法 ( 類似 Vuex、Pinia )。
@@ -126,8 +129,730 @@ Reducer 的取名來自於 JavaScript 陣列操作的 `reduce()` 方法中累積
 const [state, dispatch] = useReducer(reducer, initialArg, init?)
 ```
 
+---
+
+### 👉 參數 1 : `reducer`
+
+負責改變 `state` 的 **pure function**，reducer 有兩個參數分別是 `state`、`action`。
+
+```jsx showLineNumbers
+function reducer(state, action) {
+  // ...
+}
+```
+
+- `state` : 原本的資料狀態
+- `action` : 也就是 `dispatch` 傳入的參數，可以是任何型別，但以常規開發來說，通常會是一個物件 ( object )，且包含一個 `type` 來抽象描述要對 `state` 做些什麼事情。
+
+```jsx showLineNumbers
+const reducer = (state, action) => {
+  // 通常會使用 switch 依據 action.type 的描述進行動作
+  switch (action.type) {
+    case 'INCREMENT':
+    // do something...
+    case 'DECREMENT':
+    // do something...
+    default:
+      return state
+  }
+}
+```
+
+Reducer 最重要的是他必須要是一個 **pure function**，也就是「One input, One output」，輸入同一個值，回傳的值必須相同，不能對 `state` 有任何 mutate 的行為。
+
+```jsx showLineNumbers
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'INCREMENT':
+      // error-next-line
+      state.count += 1 // 錯誤寫法
+      return state
+    default:
+      return state
+  }
+}
+```
+
+這樣直接改變原本資料的行為雖然不會報錯，但不建議這麼做。
+
+---
+
+### 👉 參數 2 : `initialArg`
+
+初始的資料狀態，可以是任何型別，但會使用 useReducer 通常是因為有較複雜的資料狀態需要管理，所以一般會給定一個物件並且包含所需的初始資料。
+
+```jsx
+const initialCount = { count: 0 }
+```
+
+---
+
+### 👉 參數 3 : `init(option)`
+
+這個參數是可選的，一般情況蠻少會用到，`init` 會是一個 function 且需要 return 一個值，並且會傳入 `initialArg` ( 也就是初始資料狀態 ) 當作參數。
+
+```jsx showLineNumbers
+function init(initialCount) {
+  // You can do something...
+  return initialCount
+}
+```
+
+會使用到 `init` 通常是為了實現 lazy initialization，這與 `useState` 的 [initializer function](https://beta.reactjs.org/reference/react/useState#parameters) 概念差不多，可以避免重複執行成本較高的資料狀態初始化方法。
+
+<br />
+
+```jsx showLineNumbers
+function CustomerList() {
+  const initialCustomerData = loadCustomerData()
+  const [customerData, dispatch] = useReducer(reducer, initialCustomerData)
+  // ...
+}
+```
+
+上面的程式碼中，`loadCustomerData()` 假設是執行成本比較高的方法，在每次 `CustomerList` 這個元件 re-render 時都會被重新執行，要避免重新執行就可以使用 `init` :
+
+```jsx showLineNumbers
+function CustomerList() {
+  const init = () => loadCustomerData()
+  const [customerData, dispatch] = useReducer(reducer, {}, init)
+  // ...
+}
+```
+
+這個 `init` 就只會在 `useReducer` 第一次執行時呼叫，減少了一直重新執行帶來的效能問題。
+
+---
+
+### 👉 回傳值 : `state`
+
+在元件初次渲染時，會回傳 `initialArg` 或是 `init(initialArg)` 的回傳值，若使用 `dispatch` 更新 `state`，則會觸發 re-render，並且回傳新的 `state`。
+
+---
+
+### 👉 回傳值 : `dispatch`
+
+`dispatch` 是一個 function，執行時會調用 `reducer`，並且可以傳入一個參數，這個參數會傳遞給 reducer function 的 `action` 參數做使用。
+
+```jsx showLineNumbers
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'INCREMENT':
+    // do something..
+    case 'DECREMENT':
+    // do something...
+    default:
+      return state
+  }
+}
+
+// highlight-next-line
+dispatch({ type: 'INCREMENT' })
+```
+
+前面有提到，`action` 通常會是一個物件，並且裡面有 `type` 來描述**抽象行為**，這邊我們使用 `dispatch({ type: 'INCREMENT' })` 讓 `reducer` 裡面執行 `switch` 判斷要做什麼事情。
+
+不過 `dispatch` 有個需要注意的點，與 `useState` 一樣，當次元件 render 所獲取的 `state` 資料狀態都是不變的，例如 :
+
+```jsx showLineNumbers
+const initialCount = { count: 0 }
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'INCREMENT': // 抽象描述 : 我要增加 count
+      return { count: state.count + 1 }
+    case 'DECREMENT': // 抽象描述 : 我要減少 count
+      return { count: state.count - 1 }
+    default:
+      return state
+  }
+}
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialCount)
+
+  function clickHandler() {
+    dispatch({ type: 'INCREMENT' })
+    // highlight-next-line
+    console.log(state.count) // 此時 log 出來依然是 dispatch 之前的狀態 0
+  }
+  // ...
+}
+```
+
+可以想像每一次元件的 render 都是一個快照 ( snapshot )，在這個快照的 state 是不會改變的，而 `dispatch` **改變後**的 state 是在**下一次**的快照中 ( next snapshot ) 的狀態，因此若是想在 `dispatch` 後能立即拿到下一次快照的狀態，可以這麼做 :
+
+```jsx showLineNumbers
+const initialCount = { count: 0 }
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'INCREMENT':
+      return { count: state.count + 1 }
+    case 'DECREMENT':
+      return { count: state.count - 1 }
+    default:
+      return state
+  }
+}
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, initialCount)
+
+  function clickHandler() {
+    const action = { type: 'INCREMENT' }
+    dispatch(action)
+    const nextState = reducer(state, action)
+    // highlight-next-line
+    console.log(state.count) // 此時 log 出來的就是 dispatch 後的狀態 1
+  }
+  // ...
+}
+```
+
+:::tip
+💡 其實快照 ( snapshot ) 就是 JavaScript 的 [閉包 ( closure )](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures) 原理。
+:::
+
+---
+
+## 用 `useReducer` 實作一個 TodoList
+
+讓我們用 `useReducer` 來改寫一開始的 [Todo-list](#舉例來說在一個有-crud-的-todo-list-可能會長這樣-) 吧，預計使用到的檔案會是這樣 :
+
+- `./App.js`
+- `./components/TodoList.js`
+- `./components/TodoItem.js`
+- `./reducers/TodoReducer.js`
+
+### Step 1 : 建立一個 TodoReducer.js
+
+這個 `TodoReducer.js` 就是專門處理對 Todo-list 所有操作邏輯的程式。
+
+在撰寫邏輯前，先來制定這個 reducer 的初始狀態 `initialArg`。
+
+```jsx showLineNumbers title="./src/reducers/TodoReducer.js"
+export const initState = {
+  todoList: [],
+}
+```
+
+這邊最外層使用物件包裝，裡面包含 Todo-list 的陣列資料，也許在這個範例不需要這麼做，但這麼做的原因是想和大家說明，若這個 state 有擴充資料的需求，物件會比陣列方便許多。
+
+接下來就是我們 reducer 的主程式 :
+
+```jsx showLineNumbers title="./src/reducers/TodoReducer.js"
+export const initState = {
+  todoList: [],
+}
+
+function TodoReducer(state, action) {
+  switch (action.type) {
+    case 'ADD_TODO':
+    // do something...
+    case 'TOGGLE_TODO':
+    // do something...
+    case 'EDIT_TODO':
+    // do something...
+    case 'DELETE_TODO':
+    // do something...
+    default:
+      return state
+  }
+}
+
+export default TodoReducer
+```
+
+看到 `case` 對應的抽象描述字串，此時可以思考一下，萬一之後我們對這個抽象描述字串不滿意要更改，會需要一同更改所有使用到對應的 `dispatch`，非常麻煩，因此我們可以這麼做 :
+
+```jsx {1-6} showLineNumbers title="./src/reducers/TodoReducer.js"
+export const ACTIONS = {
+  ADD_TODO: 'ADD_TODO',
+  TOGGLE_TODO: 'TOGGLE_TODO',
+  EDIT_TODO: 'EDIT_TODO',
+  DELETE_TODO: 'DELETE_TODO',
+}
+
+export const initState = {
+  todoList: [],
+}
+
+function TodoReducer(state, action) {
+  switch (action.type) {
+    case ACTIONS.ADD_TODO:
+    // do something...
+    case ACTIONS.TOGGLE_TODO:
+    // do something...
+    case ACTIONS.EDIT_TODO:
+    // do something...
+    case ACTIONS.DELETE_TODO:
+    // do something...
+    default:
+      return state
+  }
+}
+
+export default TodoReducer
+```
+
+將所有抽象描述字串使用物件封裝變數 `ACTIONS`，並且將它 `export` 方便我們在其他檔案引入給 `dispatch` 使用，而 `case` 所需要對應的字串直接呼叫該物件的 `key`，在撰寫的時候你會發現配合你的編輯器提示功能，更不容易打錯字了 !
+
+<br />
+
+### Step 2 : 撰寫 reducer 裡面抽象描述的邏輯
+
+接下來就開始為每個 `action.type` 撰寫對應的邏輯，**這個步驟務必注意不能對 `state` 有任何 mutate 的行為**，另外也建議每個 `case` 使用 block scope `{ }` 包住，避免 `case` 裡面的變數與其他 `case` 的變數互相衝突。
+
+**新增 Todo :**
+
+```jsx showLineNumbers title="./src/reducers/TodoReducer.js"
+// ...
+function addTodo(todoContent = '') {
+  return {
+    id: crypto.randomUUID(),
+    content: todoContent,
+    completed: false,
+  }
+}
+
+function TodoReducer(state, action) {
+  const { payload } = action
+
+  switch (action.type) {
+    case ACTIONS.ADD_TODO: {
+      return {
+        ...state,
+        todoList: [...state.todoList, addTodo(payload.content)],
+      }
+    }
+    // ...
+  }
+}
+
+export default TodoReducer
+```
+
+新增一個 `addTodo` 函式 `return` 新的 Todo 物件，並且將接下來操作有用的資料放在 `payload` 物件裡面。
+
+**完成 / 取消完成 Todo :**
+
+```jsx showLineNumbers title="./src/reducers/TodoReducer.js"
+// ...
+function TodoReducer(state, action) {
+  const { payload } = action
+
+  switch (action.type) {
+    // ...
+    case ACTIONS.TOGGLE_TODO: {
+      const newTodo = state.todoList.map(todo => {
+        return {
+          ...todo,
+          completed: todo.id === payload.id ? payload.checked : todo.completed,
+        }
+      })
+
+      return {
+        ...state,
+        todoList: newTodo,
+      }
+    }
+    // ...
+  }
+}
+
+export default TodoReducer
+```
+
+**編輯 Todo :**
+
+```jsx showLineNumbers title="./src/reducers/TodoReducer.js"
+// ...
+function TodoReducer(state, action) {
+  const { payload } = action
+
+  switch (action.type) {
+    // ...
+    case ACTIONS.EDIT_TODO: {
+      const newTodo = state.todoList.map(todo => {
+        return {
+          ...todo,
+          content: todo.id === payload.id ? payload.content : todo.content,
+        }
+      })
+
+      return {
+        ...state,
+        todoList: newTodo,
+      }
+    }
+    // ...
+  }
+}
+
+export default TodoReducer
+```
+
+**刪除 Todo :**
+
+```jsx showLineNumbers title="./src/reducers/TodoReducer.js"
+// ...
+function TodoReducer(state, action) {
+  const { payload } = action
+
+  switch (action.type) {
+    // ...
+    case ACTIONS.DELETE_TODO: {
+      const newTodo = state.todoList.filter(todo => todo.id !== payload.id)
+
+      return {
+        ...state,
+        todoList: newTodo,
+      }
+    }
+    // ...
+  }
+}
+
+export default TodoReducer
+```
+
+<details>
+  <summary>
+    <code>TodoReducer.js</code> <strong>完整程式碼</strong>
+  </summary>
+  <CodeBlock
+    language="jsx"
+    title="./src/reducers/TodoReducer.js"
+    showLineNumbers
+  >
+    {`export const ACTIONS = {
+  ADD_TODO: 'ADD_TODO',
+  TOGGLE_TODO: 'TOGGLE_TODO',
+  EDIT_TODO: 'EDIT_TODO',
+  DELETE_TODO: 'DELETE_TODO',
+}\n\nexport const initState = {
+  todoList: [],
+}\n\nfunction addTodo(todoContent = '') {
+  return {
+    id: crypto.randomUUID(),
+    content: todoContent,
+    completed: false,
+  }
+}\n\nfunction TodoReducer(state, action) {
+  const { payload } = action\n
+  switch (action.type) {
+    case ACTIONS.ADD_TODO: {
+      return {
+        ...state,
+        todoList: [...state.todoList, addTodo(payload.content)],
+      }
+    }\n
+    case ACTIONS.TOGGLE_TODO: {
+      const newTodo = state.todoList.map(todo => {
+        return {
+          ...todo,
+          completed: todo.id === payload.id ? payload.checked : todo.completed,
+        }
+      })\n
+      return {
+        ...state,
+        todoList: newTodo,
+      }
+    }\n
+    case ACTIONS.EDIT_TODO: {
+      const newTodo = state.todoList.map(todo => {
+        return {
+          ...todo,
+          content: todo.id === payload.id ? payload.content : todo.content,
+        }
+      })\n
+      return {
+        ...state,
+        todoList: newTodo,
+      }
+    }\n
+    case ACTIONS.DELETE_TODO: {
+      const newTodo = state.todoList.filter(todo => {
+        return todo.id !== payload.id
+      })\n
+      return {
+        ...state,
+        todoList: newTodo,
+      }
+    }\n
+    default: {
+      return state
+    }\n}
+\nexport default TodoReducer
+`}
+
+  </CodeBlock>
+</details>
+
+<br />
+
+### Step 3 : 在 `TodoList` 元件引入 `TodoReducer` 使用
+
+```jsx {2,5,42} showLineNumbers title="./src/components/TodoList.js"
+import TodoItem from './TodoItem'
+import TodoReducer, { ACTIONS, initState } from './contexts/TodoReducer'
+
+function TodoList() {
+  const [state, dispatch] = useReducer(TodoReducer, initState)
+  const todoInputRef = useRef(null)
+
+  // 新增 Todo
+  function addTodo() {
+    if (!todoInputRef.current.value.trim()) {
+      alert('請輸入內容')
+      return
+    }
+
+    dispatch({
+      type: ACTIONS.ADD_TODO,
+      payload: { content: todoInputRef.current.value },
+    })
+    todoInputRef.current.value = ''
+    todoInputRef.current.focus()
+  }
+
+  return (
+    <>
+      <div>
+        <input
+          type="text"
+          ref={todoInputRef}
+          onKeyDown={e => (e.code === 'Enter' ? addTodo() : null)}
+        />
+        <button
+          type="button"
+          onClick={addTodo}
+        >
+          Add
+        </button>
+      </div>
+      <ul>
+        {state.todoList.map(todo => (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            dispatch={dispatch}
+          ></TodoItem>
+        ))}
+      </ul>
+    </>
+  )
+}
+
+export default TodoList
+```
+
+這邊將 `dispatch` 方法使用 props 的方式傳遞給 `TodoItem` 元件使用 :
+
+```jsx showLineNumbers title="./src/components/TodoItem.js"
+import { ACTIONS } from './contexts/TodoReducer'
+
+// highlight-next-line
+function TodoItem({ todo, dispatch }) {
+  // 完成/取消完成 Todo
+  function toggleTodo(e, id) {
+    dispatch({
+      type: ACTIONS.TOGGLE_TODO,
+      payload: {
+        id,
+        checked: e.target.checked,
+      },
+    })
+  }
+
+  // 編輯 Todo
+  function editTodo(id, content) {
+    const editContent = prompt('請輸入修改內容', content) || content
+
+    dispatch({
+      type: ACTIONS.EDIT_TODO,
+      payload: {
+        id,
+        content: editContent,
+      },
+    })
+  }
+
+  // 刪除 Todo
+  function deleteTodo(id) {
+    dispatch({
+      type: ACTIONS.DELETE_TODO,
+      payload: {
+        id,
+      },
+    })
+  }
+
+  return (
+    <li key={todo.id}>
+      <div>
+        <input
+          type="checkbox"
+          onChange={e => toggleTodo(e, todo.id)}
+        />
+        <span>{todo.content}</span>
+        <button
+          type="button"
+          onClick={() => editTodo(todo.id, todo.content)}
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => deleteTodo(todo.id)}
+        >
+          Delete
+        </button>
+      </div>
+    </li>
+  )
+}
+
+export default TodoItem
+```
+
+**🎉 大功告成 !!**
+
+<iframe
+  src="https://codesandbox.io/embed/react-usereducer-sample1-qnd3ud?fontsize=14&hidenavigation=1&theme=dark"
+  style={{
+    width: '100%',
+    height: '500px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="react-useReducer-sample1"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
+
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/react-usereducer-sample1-qnd3ud)
+
+<br />
+
+## 寫一個使用 `useState` 模擬 `useReducer` 的 Custom Hook !
+
+這也是官方文件 [Extracting State Logic into a Reducer](https://beta.reactjs.org/learn/extracting-state-logic-into-a-reducer) 的 [Challenges](https://beta.reactjs.org/learn/extracting-state-logic-into-a-reducer#challenges) 第 4 題。
+
+先準備一個簡單增減 `count` 的 reducer :
+
+```jsx showLineNumbers title="./src/reducers/CountReducer.js"
+const ACTIONS = {
+  INCREMENT: 'INCREMENT',
+  DECREMENT: 'DECREMENT',
+}
+
+const CountReducer = (state, action) => {
+  switch (action.type) {
+    case ACTIONS.INCREMENT: {
+      return { count: state.count + 1 }
+    }
+    case ACTIONS.DECREMENT: {
+      return { count: state.count - 1 }
+    }
+    default: {
+      return state
+    }
+  }
+}
+```
+
+再來是 Custom Hook : `useMyReducer`
+
+```jsx showLineNumbers title="./src/hooks/useMyReducer.js"
+import { useState } from 'react'
+
+function useMyReducer(reducer, initialState) {
+  const [state, setState] = useState(initialState)
+
+  function dispatch(action) {
+    const nextState = reducer(state, action)
+    setState(nextState)
+  }
+
+  return [state, dispatch]
+}
+
+export default useMyReducer
+```
+
+`useMyReducer` 會與 React 原生的 `useReducer` 一樣會有兩個主要參數，第一個參數是 `reducer`，也就是我們剛剛準備的 `CountReducer`，第二個參數是 `initialState`，會將它當作 `useState` 的初始值。
+
+還記得我們在前面提到的快照 ( snapshot ) 嗎 ? 裡面的 `dispatch` 方法就是利用執行 `reducer(state, action)` 來獲取下一次的 `state` 快照，然後再使用 `setState` 改變 `state` 並回傳。
+
+如此一來，就可以應用在我們的元件上囉 !
+
+```jsx
+import CountReducer from './reducers/CountReducer'
+import useMyReducer from './hooks/useMyReducer'
+
+const initialCount = { count: 0 }
+
+function App() {
+  const [state, dispatch] = useMyReducer(CountReducer, initialCount)
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'DECREMENT' })}
+      >
+        -
+      </button>
+      <span>{state.count}</span>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'INCREMENT' })}
+      >
+        +
+      </button>
+    </div>
+  )
+}
+```
+
+<iframe
+  src="https://codesandbox.io/embed/custom-hook-usereducer-0gex8i?fontsize=14&hidenavigation=1&theme=dark"
+  style={{
+    width: '100%',
+    height: '500px',
+    border: 0,
+    borderRadius: '4px',
+    overflow: 'hidden',
+  }}
+  title="custom-hook-useReducer"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe>
+
+[CodeSandbox 完整程式碼](https://codesandbox.io/s/custom-hook-usereducer-0gex8i)
+
+<br />
+
+## 總結
+
+以下情況可以考慮使用 `useReducer` :
+
+- 元件內使用到很多 `useState` 來處理相似的邏輯操作。
+- 想要更有條理的管理資料狀態。
+- 不同層級的元件使用到 Context，而 Context 的資料狀態需要被操作時。
+
+希望這個筆記對大家有幫助，如果有錯誤或不夠清楚的地方也歡迎在底下留言讓我改進 (-ω-ゞ
+
 <br />
 
 ## Reference
 
 ---
+
+- [useReducer](https://beta.reactjs.org/reference/react/useReducer)
+- [Extracting State Logic into a Reducer](https://beta.reactjs.org/learn/extracting-state-logic-into-a-reducer#comparing-usestate-and-usereducer)
+- [終究都要學 React 何不現在學呢？ - React 進階 - useReducer - (15) - iT 邦幫忙::一起幫忙解決難題，拯救 IT 人的一天](https://ithelp.ithome.com.tw/articles/10299714)
+- [What's the purpose of the 3rd argument in useReducer?](https://stackoverflow.com/questions/59041341/whats-the-purpose-of-the-3rd-argument-in-usereducer#comment104325264_59041341)
