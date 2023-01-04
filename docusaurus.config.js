@@ -77,8 +77,8 @@ const config = {
       },
       metadata: [
         {
-          name: 'og:image',
-          content: require.resolve('./static/img/og-img.png'),
+          name: 'robots',
+          content: 'max-image-preview:standard',
         },
       ],
       navbar: {
