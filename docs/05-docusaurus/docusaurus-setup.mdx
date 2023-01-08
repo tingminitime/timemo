@@ -189,7 +189,7 @@ docusaurus-demo /
 - `src/` - 管理 React 元件、css 樣式、md、mdx。
   - `src/pages/` - 支援將 `jsx`、`tsx`、`md`、`mdx` 轉換成頁面，並自動生成路由。
 - `static/` - 管理靜態檔案，通常放置一些圖片檔、robots.txt 之類的，`npm run build` 後會直接複製到 `build` 資料夾底下。
-- `docusaurus.config.js` - Docusaurus 的配置設定檔，通常愈需要客製自己的網站，愈需要頻繁調整這邊的配置，包含網站主題、網站 icon、部署、全站 `head`、全站 `meta`、docs、blog、頂部導覽列、底部 `footer`、docusaurus 內建 plugins、第三方套件、Google analytics 等等相關設定。( [官方文件說明](https://docusaurus.io/zh-CN/docs/configuration) )
+- `docusaurus.config.js` - Docusaurus 的配置設定檔，通常愈需要客製自己的網站，愈需要頻繁調整這邊的配置，包含網站主題、網站 icon、部署、全站 `head`、`meta`、docs、blog、頂部導覽列、底部 footer、docusaurus 內建 plugins、第三方套件、Google analytics 等等相關設定。( [官方文件說明](https://docusaurus.io/zh-CN/docs/configuration) )
 - `sidebar.js` - 側邊欄設定檔，可由自動生成側邊欄項目改為自訂項目。( [官方文件說明](https://docusaurus.io/docs/sidebar) )
 
 :::info
@@ -585,7 +585,7 @@ const config = {
 }
 ```
 
-preset 預置設定中的 `theme.customCss` 將路徑 `./src/css/custom.css` 改為 `./src/scss/custom.scss`。
+preset 預置設定中的 `theme.customCss` 將路徑及副檔名 `./src/css/custom.css` 改為 `./src/scss/custom.scss`。
 
 ```jsx showLineNumbers title="./docusaurus.config.js"
 const config = {
@@ -723,7 +723,7 @@ tags: [文件標籤] type: array
 
 ![](./assets/docusaurus-setup/vercel-1.png)
 
-因為專案放在 GitHub 上，這邊我使用 GitHub 登入。
+因為專案放在 GitHub 上，這邊使用 GitHub 登入。
 
 ### Step 2. 匯入 repo
 
@@ -731,7 +731,7 @@ tags: [文件標籤] type: array
 
 ![](./assets/docusaurus-setup/vercel-2.png)
 
-接著匯入我們的專案
+接著匯入已經上傳到 GitHub 的專案
 
 ![](./assets/docusaurus-setup/vercel-3.png)
 
