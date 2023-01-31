@@ -1,0 +1,191 @@
+---
+id: nextjs-setup
+title: Next.js - 專案建置
+sidebar_label: 專案建置 ( app directory )
+sidebar_position: 1
+tags: [JavaScript, React, Next.js]
+---
+
+import Tabs from '@theme/Tabs'
+import TabItem from '@theme/TabItem'
+
+# Next.js - 專案建置
+
+> 此筆記為 **Next 13 experimental app directory** 專案建置，關於 app directory 功能可參考 [Next 13 Beta Docs](https://beta.nextjs.org/docs) 官方說明文件。
+
+## Next.js 安裝 ( app directory )
+
+<Tabs>
+<TabItem value="npm" label="npm">
+
+```bash
+npx create-next-app@latest my-project --typescript --eslint
+```
+
+</TabItem>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm create next-app@latest my-project --typescript --eslint
+```
+
+</TabItem>
+</Tabs>
+
+執行後會詢問一些設定 :
+
+```bash
+# 是否要使用 src 資料夾管理專案 ? 選 No
+Would you like to use `src/` directory with this project? ... No / Yes
+
+# 是否使用實驗性功能 : app direction ? 選 Yes
+Would you like to use experimental `app/` directory with this project? ... No / Yes
+
+# 註冊 import alias，輸入 @/*
+What import alias would you like configured? ... @/*
+```
+
+Next.js 專案建立好後的檔案結構會是這樣 :
+
+<img
+  src={require('./assets/setup/folder-1.png').default}
+  alt=""
+  style={{ maxWidth: '320px', width: '100%' }}
+/>
+
+### 設定 `next.config.js`
+
+```javascript showLineNumbers title="next.config.js"
+const nextConfig = {
+  reactStrictMode: true,
+  experimental: {
+    appDir: true,
+  },
+}
+```
+
+若在 create next app 時有選擇 use experimental `app/` directory，`next.config.js` 會出現 `experimental: { appDir: true }`。
+> 此為 Next 13 實驗性功能，相關功能說明請參考 [Next 13 Beta Docs](https://beta.nextjs.org/docs)。
+
+### 設定 `tsconfig.json`
+
+```json showLineNumbers title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@": ["."],
+      "@/*": ["./*"]
+    },
+    "typeRoots": ["node_modules/@types", "./_types"]
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+新增 `baseUrl`、`paths`、`typeRoots` 的設定。
+
+## 安裝 Tailwind CSS
+
+<Tabs>
+<TabItem value="npm" label="npm">
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+```
+
+</TabItem>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add -D tailwindcss postcss autoprefixer
+```
+
+</TabItem>
+</Tabs>
+
+```bash
+npx tailwindcss init -p
+```
+
+### 設定 `tailwind.config.js`
+
+```jsx showLineNumbers title="next.config.js"
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx}',
+    './pages/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+### 設定 `@tailwind` 指令
+
+```css showLineNumbers title="app/globals.css"
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+### 安裝 `prettier-plugin-tailwindcss`
+
+**說明 : 自動排序 Tailwind CSS class name 插件**
+
+<Tabs>
+<TabItem value="npm" label="npm">
+
+```bash
+npm install -D prettier prettier-plugin-tailwindcss
+```
+
+</TabItem>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add -D prettier prettier-plugin-tailwindcss
+```
+
+</TabItem>
+</Tabs>
+
+### 設定 `prettier.config.js`
+
+```javascript showLineNumbers title="prettier.config.js"
+module.exports = {
+  singleQuote: true,
+  semi: false,
+  singleAttributePerLine: true,
+  arrowParens: 'avoid',
+  tailwindConfig: './tailwind.config.js',
+  plugins: ['prettier-plugin-tailwindcss'],
+}
+```
+
+可以依照自己格式化程式碼的喜好修改 Prettier 設定。
+
+<br />

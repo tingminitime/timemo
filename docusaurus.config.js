@@ -127,8 +127,9 @@ const config = {
           },
           {
             href: 'https://github.com/tingminitime',
-            label: 'GitHub',
             position: 'right',
+            className: 'navbar-github-link',
+            'aria-label': 'GitHub overview',
           },
         ],
       },
