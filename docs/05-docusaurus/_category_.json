@@ -1,5 +1,6 @@
 {
   "label": "Docusaurus 建置",
+  "className": "icon-docusaurus",
   "position": 5,
   "link": {
     "type": "generated-index",

@@ -4,6 +4,7 @@ title: Next.js - 專案建置
 sidebar_label: 專案建置 ( app directory )
 sidebar_position: 1
 tags: [JavaScript, React, Next.js]
+description: Next.js 13 搭配新功能 app directory，TypeScript、Tailwind CSS 環境建置。
 ---
 
 import Tabs from '@theme/Tabs'
@@ -13,7 +14,14 @@ import TabItem from '@theme/TabItem'
 
 > 此筆記為 **Next 13 experimental app directory** 專案建置，關於 app directory 功能可參考 [Next 13 Beta Docs](https://beta.nextjs.org/docs) 官方說明文件。
 
-## Next.js 安裝 ( app directory )
+## 環境建置目標
+- Next.js 13 ( app directory )
+- TypeScript
+- Tailwind CSS
+- Prettier
+- ESLint
+
+## Next.js 13 安裝 ( app directory )
 
 <Tabs>
 <TabItem value="npm" label="npm">
@@ -35,6 +43,12 @@ pnpm create next-app@latest my-project --typescript --eslint
 執行後會詢問一些設定 :
 
 ```bash
+# 是否使用 TypeScript ? 選 Yes
+Would you like to use TypeScript with this project? ... No / Yes
+
+# 使否使用 ESLint 管理程式碼規則 ? 選 Yes
+Would you like to use ESLint with this project? ... No / Yes
+
 # 是否要使用 src 資料夾管理專案 ? 選 No
 Would you like to use `src/` directory with this project? ... No / Yes
 
@@ -96,7 +110,7 @@ const nextConfig = {
       "@": ["."],
       "@/*": ["./*"]
     },
-    "typeRoots": ["node_modules/@types", "./_types"]
+    "typeRoots": ["node_modules/@types"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
@@ -187,5 +201,11 @@ module.exports = {
 ```
 
 可以依照自己格式化程式碼的喜好修改 Prettier 設定。
+
+<br />
+
+:::caution
+初學 Next.js 若筆記有不足之處請見諒，後續在專案環境上有碰到任何問題會再更新此筆記。
+:::
 
 <br />
