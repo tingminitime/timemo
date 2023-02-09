@@ -1,0 +1,143 @@
+---
+id: javascript-floating-precision-calc
+title: JavaScript - 0.1 + 0.2 !== 0.3
+sidebar_label: 浮點數計算 - 0.1 + 0.2 !== 0.3
+sidebar_position: 6
+tags: [JavaScript, 前端面試題, 浮點數, floating]
+description: 在 JavaScript 中，0.1 + 0.2 並不等於 0.3，為什麼會不精準? 該如何修正?
+---
+
+# JavaScript - 浮點數計算之 0.1 + 0.2 !== 0.3
+
+## 0.1 + 0.2 等於 ?
+
+`0.30000000000000004`
+
+<img
+  src={require('./assets/floatingCalc/floatingCalc-1.png').default}
+  alt=""
+  style={{ maxWidth: '350px', width: '100%' }}
+/>
+
+<br />
+<br />
+
+因此 `0.1 + 0.2 === 0.3` 為 `false`
+
+## 為什麼會不精準 ?
+
+JavaScript 的浮點數計算採用 IEEE 二進位浮點數算術標準 ( IEEE 754 ) 中的**雙精確度 ( 64 位元 ) 浮點數。**
+
+:::info
+( 維基百科 - IEEE 754 )
+IEEE 二進位浮點數算術標準（IEEE 754）是 20 世紀 80 年代以來最廣泛使用的浮點數運算標準，標準中定義了表示浮點數的格式，包含負零、反常值 ( denormal number )、特殊數值 ( 無窮值 Inf、非數值 NaN )，以及這些數值的「浮點數運算子」；它也指明了四種[數值修約規則](https://zh.wikipedia.org/wiki/%E6%95%B8%E5%80%BC%E4%BF%AE%E7%B4%84%E8%A6%8F%E5%89%87)和五種例外狀況（包括例外發生的時機與處理方式）。
+:::
+
+`0.1` 與 `0.2` 在轉換為二進位實際儲存的值再轉換為十進位後會比原先略大 ( 這裡就已經損失精度 )，在二進位運算後得到的結果就會是 `0.30000000000000004`。
+
+但有時候在 JavaScript 運算又會得到理想的數值，例如 `0.5 + 0.625` 會精準得到 `1.125`，原因是**二進位**能精確表示「**位數有限且分母為 2 的倍數的小數**」，因此 `0.5`、`0.25`、`0.125`、`0.625` 等都可以被轉換為精確的二進位儲存。
+
+不過，運算小數明明不是**位數有限且分母為 2 的倍數的小數**，卻有可能獲得正確的計算結果，例如 `0.1` + `0.3` 會正確得到 `0.4`，由於 IEEE 754 規則會將浮點數截斷，所以是「**有可能**」會在浮點數計算中得到預期結果。
+
+:::tip
+所以在判斷式中盡量不要直接比較兩個浮點數，很容易遇到非預期結果。
+:::
+
+## 如何修正 ?
+
+### JS 原生方法
+
+`.toFixed`
+
+```javascript showLineNumbers
+(0.1 + 0.2).toFixed(1) // '0.3'
+(0.2 + 0.4).toFixed(1) // '0.6'
+```
+
+`.toPrecision`
+
+```javascript showLineNumbers
+(0.1 + 0.2).toPrecision(1) // '0.3'
+(0.2 + 0.4).toPrecision(1) // '0.6'
+```
+
+但使用以上兩種方法仍然不是最安全的，可以看以下例子 :
+
+```javascript showLineNumbers
+0.15.toFixed(1) // '0.1'
+0.15.toPrecision(1) // '0.1'
+
+0.25.toFixed(1) // '0.3'
+0.25.toPrecision(1) // '0.3'
+```
+
+當想要做四捨五入時還是會因為浮點數精確度問題造成非預期結果。
+
+### 第三方套件
+
+- [Math.js](https://mathjs.org/)
+    
+    ```javascript showLineNumbers
+    math.format(0.1 + 0.2, {precision: 14}) // '0.3'
+    math.equal(0.1 + 0.2, 0.3) // true
+    ```
+    
+    ```javascript showLineNumbers
+    math.format(0.15, { precision: 1 }) // '0.2'
+    math.format(0.25, { precision: 1 }) // '0.3'
+    ```
+    
+- [decimal.js](http://mikemcl.github.io/decimal.js/)
+    
+    ```javascript showLineNumbers
+    let x = new Decimal(0.1)
+    let ans = x.add(0.2)
+    
+    ans.toString() // '0.3'
+    ans.equals(0.3) // true
+    ```
+    
+    ```javascript showLineNumbers
+    let a = new Decimal(0.15)
+    let b = new Decimal(0.25)
+    
+    a.toFixed(1) // '0.2'
+    a.toPrecision(1) // '0.2'
+    b.toFixed(1) // '0.3'
+    b.toPrecision(1) // '0.3'
+    ```
+    
+- [bignumber.js](https://mikemcl.github.io/bignumber.js/)
+    
+    ```javascript showLineNumbers
+    let x = new BigNumber(0.1)
+    let ans = x.plus(0.2)
+    
+    ans.toString() // '0.3'
+    ans.isEqualTo(0.3) // true
+    ```
+    
+    ```javascript showLineNumbers
+    let a = new BigNumber(0.15)
+    let b = new BigNumber(0.25)
+    
+    a.toFixed(1) // '0.2'
+    a.toPrecision(1) // '0.2'
+    b.toFixed(1) // '0.3'
+    b.toPrecision(1) // '0.3'
+    ```
+    
+<br />
+
+## Reference
+
+---
+
+- [在 JavaScript 中 0.1 + 0.2 會是多少? 為什麼? 如何避免相關問題? - 軟體工程師面試、職涯、新加坡生活分享 - ExplainThis](https://www.explainthis.io/zh-hant/interview-guides/javascript/js-zero-point-one-plus-zero-point-two)
+- [IEEE-754 與浮點數運算 - iT 邦幫忙::一起幫忙解決難題，拯救 IT 人的一天](https://ithelp.ithome.com.tw/articles/10266532)
+- [JavaScript / 程式語言中，0.1 + 0.2 != 0.3](https://jenifers001d.github.io/2020/09/13/JavaScript/float-precision-calculation/)
+- [JavaScript 关于 IEEE 754 双精度浮点数的实现 | 风动之石的博客](https://blog.windstone.cc/js/data-types/number/floating.html)
+- [0.1 + 0.2不等于0.3？为什么JavaScript有这种"骚"操作？](https://juejin.cn/post/6844903680362151950)
+- [JavaScript 裡的概數運算，IEEE 754 的標準其實沒有被實作？](https://kusakawazeusu.medium.com/javascript-%E8%A3%A1%E7%9A%84%E6%A6%82%E6%95%B8%E9%81%8B%E7%AE%97-ieee-754-%E7%9A%84%E6%A8%99%E6%BA%96%E5%85%B6%E5%AF%A6%E6%B2%92%E6%9C%89%E8%A2%AB%E5%AF%A6%E4%BD%9C-a007432804f3)
+- [Number.prototype.toPrecision() - JavaScript | MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toPrecision)
+- [Number.prototype.toFixed() - JavaScript | MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed)
