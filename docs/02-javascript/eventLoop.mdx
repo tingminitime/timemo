@@ -4,6 +4,7 @@ title: JavaScript - Event Loop
 sidebar_label: Event Loop
 sidebar_position: 3
 tags: [JavaScript, Event loop, 下班後的程式讀書會, 前端面試題]
+description: Event Loop，顧名思義，就是一個 Loop ( 循環 )，會持續檢查執行堆疊 ( Call Stack ) 有沒有 Callback 可以呼叫...
 ---
 
 # JavaScript - Event Loop
@@ -11,7 +12,7 @@ tags: [JavaScript, Event loop, 下班後的程式讀書會, 前端面試題]
 ## 開始之前
 
 - JavaScript 引擎是 **單執行緒 ( Single Thread )**，也就是 **一次只做一件事 / 一次只執行一段程式碼**。
-- 瀏覽器不只有 JS 引擎，也就是整個瀏覽器並不是只由 JS 引擎組成，而一個分頁 ( Tab ) 僅存在一個 JS 引擎運行 JS 程式。()
+- 瀏覽器不只有 JS 引擎，也就是整個瀏覽器並不是只由 JS 引擎組成，而一個分頁 ( Tab ) 僅存在一個 JS 引擎運行 JS 程式。
 - 瀏覽器是屬於多程式多執行緒，因此可以在瀏覽器中做出非同步行為。
 - **Event Loop** 顧名思義，就是一個 Loop ( 循環 )，會持續檢查執行堆疊 ( Call Stack ) 有沒有 Callback 可以呼叫。
 
