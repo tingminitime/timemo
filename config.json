@@ -1,5 +1,5 @@
 {
-  "index_name": "timemo",
+  "index_name": "timemo-algolia",
   "start_urls": ["https://timemo.vercel.app/"],
   "sitemap_urls": [
     "https://timemo.vercel.app/sitemap.xml"
