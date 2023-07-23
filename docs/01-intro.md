@@ -19,4 +19,4 @@ _— 「Egoless Programming」_
 
 <br />
 
-[所有前端筆記標籤](/docs/tags)
+[所有標籤 - 前端筆記](/docs/tags)
