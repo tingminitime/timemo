@@ -10,7 +10,7 @@ const projectName = 'timemo'
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'TIMemo',
+  title: 'timemo',
   tagline: 'The only constant in the world is change.',
   url: 'https://timemo.vercel.app',
   baseUrl: '/',
@@ -82,10 +82,10 @@ const config = {
         },
       ],
       navbar: {
-        title: 'TIMemo',
+        title: 'timemo',
         hideOnScroll: false,
         logo: {
-          alt: 'TIMemo Logo',
+          alt: 'timemo Logo',
           src: 'img/Tim-logo.svg',
           srcDark: 'img/Tim-logo-white.svg',
           style: { margin: '0 1rem' },
@@ -109,11 +109,11 @@ const config = {
             items: [
               {
                 to: '/docs/tags',
-                label: '前端筆記標籤',
+                label: '所有標籤 - 前端筆記',
               },
               {
                 to: '/blog/tags',
-                label: 'Blog標籤',
+                label: '所有標籤 - Blog',
               },
               {
                 to: '/more/about',
@@ -130,6 +130,7 @@ const config = {
             position: 'right',
             className: 'navbar-github-link',
             'aria-label': 'GitHub overview',
+            title: 'Open new page to GitHub overview',
           },
         ],
       },

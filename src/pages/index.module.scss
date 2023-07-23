@@ -81,9 +81,32 @@
 
   > span {
     vertical-align: middle;
+    display: inline-block;
+    height: 24px;
   }
 
   > span[class^='material'] {
     font-size: 1.5em;
   }
+}
+
+@keyframes continue {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.icon-arrow {
+  display: flex;
+  align-items: center;
+  margin-left: 0.25em;
+  animation-name: continue;
+  animation-duration: 1500ms;
+  animation-iteration-count: infinite;
 }

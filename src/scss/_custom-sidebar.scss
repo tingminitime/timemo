@@ -87,11 +87,25 @@ li.icon-vue > .menu__list-item-collapsible {
 
 li.icon-docusaurus > .menu__list-item-collapsible {
   .menu__link--sublist::before {
-    background-color: #20232a;
+    background-color: transparent;
   }
 
   .menu__link--sublist::after {
     content: url('@site/static/category-icon/icon-docusaurus.svg');
+    width: 18px;
+    height: 18px;
+    left: 0.8rem;
+    top: 28%;
+  }
+}
+
+li.icon-ai > .menu__list-item-collapsible {
+  .menu__link--sublist::before {
+    background-color: transparent;
+  }
+
+  .menu__link--sublist::after {
+    content: url('@site/static/category-icon/icon-ai.svg');
     width: 18px;
     height: 18px;
     left: 0.8rem;
